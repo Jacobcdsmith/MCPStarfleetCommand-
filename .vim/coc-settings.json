@@ -1,0 +1,35 @@
+{
+  "suggest.noselect": true,
+  "suggest.enableCommitCharacter": true,
+  "coc.preferences.formatOnSaveFiletypes": ["javascript", "json", "html", "css"],
+  "eslint.filetypes": ["javascript"],
+  "eslint.autoFix": true,
+  "eslint.autoFixOnSave": true,
+  "prettier.onlyUseLocalVersion": true,
+  "prettier.requireConfig": true,
+  "languageserver": {
+    "mcp": {
+      "command": "node",
+      "args": ["server.js"],
+      "filetypes": ["mcp"],
+      "rootPatterns": ["package.json"]
+    }
+  },
+  "json.schemas": [
+    {
+      "fileMatch": ["*.mcp"],
+      "url": "https://raw.githubusercontent.com/modelcontextprotocol/specification/main/schema/mcp.json"
+    }
+  ],
+  "diagnostic.errorSign": "✗",
+  "diagnostic.warningSign": "⚠",
+  "diagnostic.infoSign": "ℹ",
+  "diagnostic.hintSign": "➤",
+  "list.indicator": ">",
+  "list.selectedSignText": " ",
+  "codeLens.enable": true,
+  "git.enableGutters": true,
+  "git.addGlamorous": true,
+  "npm.binPath": "npm",
+  "tsserver.enableJavascript": true
+}

@@ -1,0 +1,69 @@
+{
+  "recommendations": [
+    // JavaScript/Node.js Development
+    "ms-vscode.vscode-node-azure-pack",
+    "ms-vscode.js-debug",
+    "ms-vscode.vscode-json",
+    
+    // Code Quality & Linting
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "usernamehw.errorlens",
+    "streetsidesoftware.code-spell-checker",
+    
+    // Git Integration
+    "eamodio.gitlens",
+    "donjayamanne.githistory",
+    "mhutchie.git-graph",
+    
+    // HTML/CSS for Dashboard
+    "bradlc.vscode-tailwindcss",
+    "ecmel.vscode-html-css",
+    "formulahendry.auto-rename-tag",
+    
+    // REST API Testing (for MCP endpoints)
+    "humao.rest-client",
+    "rangav.vscode-thunder-client",
+    
+    // Documentation & Markdown
+    "yzhang.markdown-all-in-one",
+    "davidanson.vscode-markdownlint",
+    
+    // General Productivity
+    "ms-vscode.hexeditor",
+    "vscode-icons-team.vscode-icons",
+    "gruntfuggly.todo-tree",
+    "alefragnani.bookmarks",
+    "christian-kohler.path-intellisense",
+    "formulahendry.auto-close-tag",
+    
+    // Terminal & Shell
+    "ms-vscode.powershell",
+    "timonwong.shellcheck",
+    
+    // JSON & Configuration
+    "zainchen.json",
+    "redhat.vscode-yaml",
+    
+    // Development Tools
+    "ms-vscode.vscode-serial-monitor",
+    "jock.svg",
+    "ms-vscode.live-server",
+    
+    // Testing & Debugging
+    "hbenl.vscode-test-explorer",
+    "ms-vscode.test-adapter-converter",
+    
+    // Package Management
+    "christian-kohler.npm-intellisense",
+    "eg2.vscode-npm-script",
+    
+    // Themes (Optional)
+    "zhuangtongfa.material-theme",
+    "pkief.material-icon-theme"
+  ],
+  "unwantedRecommendations": [
+    "ms-vscode.vscode-typescript-next",
+    "hookyqr.beautify"
+  ]
+}

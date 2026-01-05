@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Fleet - STARFLEET COMMAND</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/pages/shared/lcars-styles.css">
+    <style>
+        .container-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 15px;
+        }
+
+        .container-card {
+            background: linear-gradient(135deg, rgba(0,80,120,0.4) 0%, rgba(0,40,80,0.6) 100%);
+            border: 2px solid var(--lcars-blue);
+            border-radius: 12px;
+            padding: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container-card.running {
+            border-color: var(--console-green);
+        }
+
+        .container-card.stopped {
+            border-color: #ff6666;
+        }
+
+        .container-card.paused {
+            border-color: var(--enterprise-gold);
+        }
+
+        .container-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .container-name {
+            font-family: 'Orbitron', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--enterprise-gold);
+        }
+
+        .container-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .container-status.running {
+            background: rgba(0,255,100,0.2);
+            color: var(--console-green);
+        }
+
+        .container-status.stopped {
+            background: rgba(255,100,100,0.2);
+            color: #ff6666;
+        }
+
+        .container-status.paused {
+            background: rgba(255,200,100,0.2);
+            color: var(--enterprise-gold);
+        }
+
+        .container-info {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.85rem;
+            color: var(--lcars-light-blue);
+            margin-bottom: 10px;
+        }
+
+        .container-info span {
+            display: block;
+            margin: 3px 0;
+        }
+
+        .container-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .container-actions button {
+            flex: 1;
+            min-width: 60px;
+        }
+
+        .stats-bar {
+            height: 6px;
+            background: rgba(0,50,100,0.5);
+            border-radius: 3px;
+            margin: 5px 0;
+            overflow: hidden;
+        }
+
+        .stats-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .stats-bar-fill.cpu {
+            background: linear-gradient(90deg, #00ff66, #ffcc00);
+        }
+
+        .stats-bar-fill.memory {
+            background: linear-gradient(90deg, #00ccff, #ff66cc);
+        }
+
+        .image-card {
+            background: rgba(0,40,80,0.5);
+            border: 1px solid var(--lcars-blue);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+
+        .image-tag {
+            background: rgba(0,100,150,0.5);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: var(--console-green);
+        }
+
+        .volume-card {
+            background: rgba(0,40,80,0.5);
+            border-left: 4px solid var(--enterprise-gold);
+            padding: 10px 15px;
+            margin-bottom: 8px;
+        }
+
+        .network-badge {
+            display: inline-block;
+            background: rgba(0,100,150,0.5);
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin: 3px;
+            font-size: 0.85rem;
+        }
+
+        .log-viewer {
+            background: rgba(0,10,20,0.9);
+            border: 1px solid var(--lcars-blue);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .log-line {
+            padding: 2px 0;
+            border-bottom: 1px solid rgba(85,85,255,0.1);
+        }
+
+        .log-timestamp {
+            color: #888;
+        }
+
+        .log-info {
+            color: var(--console-green);
+        }
+
+        .log-warn {
+            color: var(--enterprise-gold);
+        }
+
+        .log-error {
+            color: #ff6666;
+        }
+    </style>
+</head>
+<body>
+    <div class="lcars-container">
+        <!-- Header -->
+        <div class="lcars-header">
+            <div class="header-left">
+                <a href="/pages/index.html" class="back-btn">← BACK</a>
+                <div>
+                    <h1 class="page-title">🐳 Docker Fleet</h1>
+                    <p class="page-subtitle">Container Management & Orchestration</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="status-badge">
+                    <div class="status-dot"></div>
+                    <span class="status-text">ONLINE</span>
+                </div>
+                <span id="stardate" class="stardate"></span>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="lcars-panel">
+            <div class="panel-header">
+                <span class="panel-icon">⚡</span>
+                <h2 class="panel-title">Quick Actions</h2>
+            </div>
+            <div class="panel-content">
+                <div class="quick-actions">
+                    <button class="lcars-btn primary" onclick="listContainers()">🐳 Containers</button>
+                    <button class="lcars-btn" onclick="listImages()">📦 Images</button>
+                    <button class="lcars-btn" onclick="listVolumes()">💾 Volumes</button>
+                    <button class="lcars-btn" onclick="listNetworks()">🌐 Networks</button>
+                    <button class="lcars-btn" onclick="dockerInfo()">ℹ️ System Info</button>
+                    <button class="lcars-btn" onclick="dockerStats()">📊 Stats</button>
+                    <button class="lcars-btn danger" onclick="pruneSystem()">🧹 Prune</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Container Overview -->
+        <div class="lcars-panel">
+            <div class="panel-header">
+                <span class="panel-icon">🐳</span>
+                <h2 class="panel-title">Container Fleet</h2>
+                <button class="lcars-btn" onclick="listContainers()" style="margin-left: auto;">🔄 Refresh</button>
+            </div>
+            <div class="panel-content">
+                <div class="quick-actions" style="margin-bottom: 15px;">
+                    <button class="lcars-btn" onclick="listContainers()">All</button>
+                    <button class="lcars-btn" onclick="runningContainers()">Running</button>
+                    <button class="lcars-btn" onclick="stoppedContainers()">Stopped</button>
+                    <button class="lcars-btn success" onclick="startAll()">▶ Start All</button>
+                    <button class="lcars-btn danger" onclick="stopAll()">⏹ Stop All</button>
+                </div>
+                <div id="container-fleet" class="container-grid">
+                    <div class="terminal-output">Loading containers...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="two-column">
+            <!-- Container Actions -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">⚙️</span>
+                    <h2 class="panel-title">Container Actions</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="form-group">
+                        <label class="form-label">Container Name/ID</label>
+                        <input type="text" id="container-id" class="lcars-input" placeholder="container_name or abc123">
+                    </div>
+                    <div class="quick-actions" style="margin-bottom: 15px;">
+                        <button class="lcars-btn success" onclick="startContainer()">▶ Start</button>
+                        <button class="lcars-btn danger" onclick="stopContainer()">⏹ Stop</button>
+                        <button class="lcars-btn" onclick="restartContainer()">🔄 Restart</button>
+                        <button class="lcars-btn" onclick="pauseContainer()">⏸ Pause</button>
+                        <button class="lcars-btn" onclick="unpauseContainer()">▶️ Unpause</button>
+                    </div>
+                    <div class="quick-actions" style="margin-bottom: 15px;">
+                        <button class="lcars-btn" onclick="inspectContainer()">🔍 Inspect</button>
+                        <button class="lcars-btn" onclick="containerLogs()">📜 Logs</button>
+                        <button class="lcars-btn" onclick="containerTop()">📊 Processes</button>
+                        <button class="lcars-btn danger" onclick="removeContainer()">🗑️ Remove</button>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Execute Command in Container</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="exec-command" class="lcars-input" placeholder="ls -la">
+                            <button class="lcars-btn primary" onclick="execInContainer()">Exec</button>
+                        </div>
+                    </div>
+                    <div id="container-output" style="margin-top: 15px;">
+                        <div class="terminal-output">Container output will appear here...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Container Logs -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">📜</span>
+                    <h2 class="panel-title">Container Logs</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="form-group">
+                        <label class="form-label">Container</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="logs-container" class="lcars-input" placeholder="container_name">
+                            <select id="logs-lines" class="lcars-input" style="width: 100px;">
+                                <option value="50">50 lines</option>
+                                <option value="100" selected>100 lines</option>
+                                <option value="200">200 lines</option>
+                                <option value="500">500 lines</option>
+                            </select>
+                            <button class="lcars-btn primary" onclick="fetchLogs()">Fetch</button>
+                        </div>
+                    </div>
+                    <div class="quick-actions" style="margin-bottom: 15px;">
+                        <button class="lcars-btn" onclick="followLogs()">📡 Follow</button>
+                        <button class="lcars-btn" onclick="clearLogs()">🗑️ Clear</button>
+                        <button class="lcars-btn" onclick="downloadLogs()">💾 Download</button>
+                    </div>
+                    <div id="logs-output" class="log-viewer">
+                        Logs will appear here...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Docker Compose -->
+        <div class="lcars-panel">
+            <div class="panel-header">
+                <span class="panel-icon">📋</span>
+                <h2 class="panel-title">Docker Compose</h2>
+            </div>
+            <div class="panel-content">
+                <div class="form-group">
+                    <label class="form-label">Compose File Path</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="compose-file" class="lcars-input" placeholder="./docker-compose.yml" value="./docker-compose.yml">
+                        <button class="lcars-btn" onclick="composeConfig()">Validate</button>
+                    </div>
+                </div>
+                <div class="quick-actions" style="margin-bottom: 15px;">
+                    <button class="lcars-btn success" onclick="composeUp()">▶ Up</button>
+                    <button class="lcars-btn danger" onclick="composeDown()">⏹ Down</button>
+                    <button class="lcars-btn" onclick="composeRestart()">🔄 Restart</button>
+                    <button class="lcars-btn" onclick="composeBuild()">🔨 Build</button>
+                    <button class="lcars-btn" onclick="composePull()">⬇ Pull</button>
+                    <button class="lcars-btn" onclick="composePs()">📊 PS</button>
+                    <button class="lcars-btn" onclick="composeLogs()">📜 Logs</button>
+                </div>
+                <div id="compose-output">
+                    <div class="terminal-output">Compose output will appear here...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="two-column">
+            <!-- Images -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">📦</span>
+                    <h2 class="panel-title">Images</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="quick-actions" style="margin-bottom: 15px;">
+                        <button class="lcars-btn" onclick="listImages()">List All</button>
+                        <button class="lcars-btn" onclick="danglingImages()">Dangling</button>
+                        <button class="lcars-btn danger" onclick="pruneImages()">Prune</button>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Pull Image</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="pull-image" class="lcars-input" placeholder="nginx:latest">
+                            <button class="lcars-btn primary" onclick="pullImage()">Pull</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Remove Image</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="remove-image" class="lcars-input" placeholder="image:tag">
+                            <button class="lcars-btn danger" onclick="removeImage()">Remove</button>
+                        </div>
+                    </div>
+                    <div id="images-output" style="margin-top: 15px;">
+                        <div class="terminal-output">Images list will appear here...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Volumes -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">💾</span>
+                    <h2 class="panel-title">Volumes</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="quick-actions" style="margin-bottom: 15px;">
+                        <button class="lcars-btn" onclick="listVolumes()">List All</button>
+                        <button class="lcars-btn danger" onclick="pruneVolumes()">Prune Unused</button>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Create Volume</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="create-volume" class="lcars-input" placeholder="my_volume">
+                            <button class="lcars-btn success" onclick="createVolume()">Create</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Inspect/Remove Volume</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="volume-name" class="lcars-input" placeholder="volume_name">
+                            <button class="lcars-btn" onclick="inspectVolume()">Inspect</button>
+                            <button class="lcars-btn danger" onclick="removeVolume()">Remove</button>
+                        </div>
+                    </div>
+                    <div id="volumes-output" style="margin-top: 15px;">
+                        <div class="terminal-output">Volumes list will appear here...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Networks -->
+        <div class="lcars-panel">
+            <div class="panel-header">
+                <span class="panel-icon">🌐</span>
+                <h2 class="panel-title">Networks</h2>
+            </div>
+            <div class="panel-content">
+                <div class="quick-actions" style="margin-bottom: 15px;">
+                    <button class="lcars-btn" onclick="listNetworks()">List All</button>
+                    <button class="lcars-btn danger" onclick="pruneNetworks()">Prune Unused</button>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Create Network</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="create-network" class="lcars-input" placeholder="my_network">
+                        <select id="network-driver" class="lcars-input" style="width: 120px;">
+                            <option value="bridge">bridge</option>
+                            <option value="host">host</option>
+                            <option value="overlay">overlay</option>
+                            <option value="none">none</option>
+                        </select>
+                        <button class="lcars-btn success" onclick="createNetwork()">Create</button>
+                    </div>
+                </div>
+                <div id="networks-output" style="margin-top: 15px;">
+                    <div class="terminal-output">Networks list will appear here...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Docker System -->
+        <div class="lcars-panel">
+            <div class="panel-header">
+                <span class="panel-icon">ℹ️</span>
+                <h2 class="panel-title">System Information</h2>
+            </div>
+            <div class="panel-content">
+                <div class="quick-actions" style="margin-bottom: 15px;">
+                    <button class="lcars-btn" onclick="dockerInfo()">System Info</button>
+                    <button class="lcars-btn" onclick="dockerVersion()">Version</button>
+                    <button class="lcars-btn" onclick="dockerDiskUsage()">Disk Usage</button>
+                    <button class="lcars-btn" onclick="dockerEvents()">Events</button>
+                    <button class="lcars-btn danger" onclick="pruneSystem()">System Prune</button>
+                </div>
+                <div id="system-output">
+                    <div class="terminal-output">System information will appear here...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="lcars-footer">
+            <p class="footer-text">STARFLEET COMMAND • Docker Fleet Module • LCARS Interface</p>
+        </div>
+    </div>
+
+    <script src="/pages/shared/lcars-core.js"></script>
+    <script>
+        // Container Management
+        async function listContainers() {
+            const result = await executeTool('run_command', { command: 'docker ps -a --format "{{.ID}}|{{.Names}}|{{.Image}}|{{.Status}}|{{.Ports}}"' });
+            if (result.success && result.output) {
+                renderContainers(result.output);
+            } else {
+                document.getElementById('container-fleet').innerHTML = '<div class="terminal-output">No containers found or Docker not running</div>';
+            }
+        }
+
+        function renderContainers(output) {
+            const lines = output.trim().split('\n').filter(l => l.includes('|'));
+            if (lines.length === 0) {
+                document.getElementById('container-fleet').innerHTML = '<div class="terminal-output">No containers found</div>';
+                return;
+            }
+
+            const html = lines.map(line => {
+                const [id, name, image, status, ports] = line.split('|');
+                const isRunning = status.toLowerCase().includes('up');
+                const isPaused = status.toLowerCase().includes('paused');
+                const statusClass = isPaused ? 'paused' : (isRunning ? 'running' : 'stopped');
+                
+                return `
+                    <div class="container-card ${statusClass}">
+                        <div class="container-header">
+                            <span class="container-name">${name}</span>
+                            <span class="container-status ${statusClass}">${isRunning ? (isPaused ? 'PAUSED' : 'RUNNING') : 'STOPPED'}</span>
+                        </div>
+                        <div class="container-info">
+                            <span>🏷️ ${image}</span>
+                            <span>🆔 ${id.substring(0, 12)}</span>
+                            <span>📊 ${status}</span>
+                            ${ports ? `<span>🔌 ${ports}</span>` : ''}
+                        </div>
+                        <div class="container-actions">
+                            ${isRunning ? 
+                                `<button class="lcars-btn danger" onclick="quickStop('${name}')">Stop</button>
+                                 <button class="lcars-btn" onclick="quickRestart('${name}')">Restart</button>` :
+                                `<button class="lcars-btn success" onclick="quickStart('${name}')">Start</button>
+                                 <button class="lcars-btn danger" onclick="quickRemove('${name}')">Remove</button>`
+                            }
+                            <button class="lcars-btn" onclick="quickLogs('${name}')">Logs</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('container-fleet').innerHTML = html;
+            playSuccessSound();
+        }
+
+        async function runningContainers() {
+            await runTool('run_command', { command: 'docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}"' }, 'container-fleet');
+        }
+
+        async function stoppedContainers() {
+            await runTool('run_command', { command: 'docker ps -a --filter "status=exited" --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"' }, 'container-fleet');
+        }
+
+        // Quick actions from container cards
+        async function quickStart(name) {
+            await runTool('run_command', { command: `docker start ${name}` }, 'container-output');
+            setTimeout(listContainers, 1000);
+        }
+
+        async function quickStop(name) {
+            await runTool('run_command', { command: `docker stop ${name}` }, 'container-output');
+            setTimeout(listContainers, 1000);
+        }
+
+        async function quickRestart(name) {
+            await runTool('run_command', { command: `docker restart ${name}` }, 'container-output');
+            setTimeout(listContainers, 2000);
+        }
+
+        async function quickRemove(name) {
+            if (!confirm(`Remove container ${name}?`)) return;
+            await runTool('run_command', { command: `docker rm ${name}` }, 'container-output');
+            setTimeout(listContainers, 1000);
+        }
+
+        async function quickLogs(name) {
+            document.getElementById('logs-container').value = name;
+            await fetchLogs();
+        }
+
+        // Container actions
+        function getContainerId() {
+            return document.getElementById('container-id').value;
+        }
+
+        async function startContainer() {
+            const id = getContainerId();
+            if (!id) { alert('Please enter container name/ID'); return; }
+            await runTool('run_command', { command: `docker start ${id}` }, 'container-output');
+            setTimeout(listContainers, 1000);
+        }
+
+        async function stopContainer() {
+            const id = getContainerId();
+            if (!id) { alert('Please enter container name/ID'); return; }
+            await runTool('run_command', { command: `docker stop ${id}` }, 'container-output');
+            setTimeout(listContainers, 1000);
+        }
+
+        async function restartContainer() {
+            const id = getContainerId();
+            if (!id) return;
+            await runTool('run_command', { command: `docker restart ${id}` }, 'container-output');
+            setTimeout(listContainers, 2000);
+        }
+
+        async function pauseContainer() {
+            const id = getContainerId();
+            if (!id) return;
+            await runTool('run_command', { command: `docker pause ${id}` }, 'container-output');
+            setTimeout(listContainers, 1000);
+        }
+
+        async function unpauseContainer() {
+            const id = getContainerId();
+            if (!id) return;
+            await runTool('run_command', { command: `docker unpause ${id}` }, 'container-output');
+            setTimeout(listContainers, 1000);
+        }
+
+        async function inspectContainer() {
+            const id = getContainerId();
+            if (!id) return;
+            await runTool('run_command', { command: `docker inspect ${id}` }, 'container-output');
+        }
+
+        async function containerLogs() {
+            const id = getContainerId();
+            if (!id) return;
+            await runTool('run_command', { command: `docker logs --tail 50 ${id}` }, 'container-output');
+        }
+
+        async function containerTop() {
+            const id = getContainerId();
+            if (!id) return;
+            await runTool('run_command', { command: `docker top ${id}` }, 'container-output');
+        }
+
+        async function removeContainer() {
+            const id = getContainerId();
+            if (!id) return;
+            if (!confirm(`Remove container ${id}?`)) return;
+            await runTool('run_command', { command: `docker rm -f ${id}` }, 'container-output');
+            setTimeout(listContainers, 1000);
+        }
+
+        async function execInContainer() {
+            const id = getContainerId();
+            const cmd = document.getElementById('exec-command').value;
+            if (!id || !cmd) { alert('Please enter container name and command'); return; }
+            await runTool('run_command', { command: `docker exec ${id} ${cmd}` }, 'container-output');
+        }
+
+        async function startAll() {
+            await runTool('run_command', { command: 'docker start $(docker ps -aq)' }, 'container-output');
+            setTimeout(listContainers, 2000);
+        }
+
+        async function stopAll() {
+            if (!confirm('Stop ALL containers?')) return;
+            await runTool('run_command', { command: 'docker stop $(docker ps -q)' }, 'container-output');
+            setTimeout(listContainers, 2000);
+        }
+
+        // Logs
+        async function fetchLogs() {
+            const container = document.getElementById('logs-container').value;
+            const lines = document.getElementById('logs-lines').value;
+            if (!container) { alert('Please enter container name'); return; }
+            
+            const result = await executeTool('run_command', { command: `docker logs --tail ${lines} ${container} 2>&1` });
+            if (result.success) {
+                document.getElementById('logs-output').innerHTML = formatLogs(result.output);
+            }
+        }
+
+        function formatLogs(output) {
+            return output.split('\n').map(line => {
+                let className = 'log-info';
+                if (line.toLowerCase().includes('error') || line.toLowerCase().includes('fail')) {
+                    className = 'log-error';
+                } else if (line.toLowerCase().includes('warn')) {
+                    className = 'log-warn';
+                }
+                return `<div class="log-line ${className}">${escapeHtml(line)}</div>`;
+            }).join('');
+        }
+
+        function clearLogs() {
+            document.getElementById('logs-output').innerHTML = 'Logs cleared...';
+        }
+
+        function downloadLogs() {
+            const logs = document.getElementById('logs-output').textContent;
+            const blob = new Blob([logs], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'container-logs.txt';
+            a.click();
+        }
+
+        let followInterval = null;
+        function followLogs() {
+            const container = document.getElementById('logs-container').value;
+            if (!container) return;
+            
+            if (followInterval) {
+                clearInterval(followInterval);
+                followInterval = null;
+                return;
+            }
+            
+            followInterval = setInterval(fetchLogs, 2000);
+        }
+
+        // Docker Compose
+        function getComposeFile() {
+            return document.getElementById('compose-file').value;
+        }
+
+        async function composeUp() {
+            const file = getComposeFile();
+            await runTool('run_command', { command: `docker-compose -f ${file} up -d` }, 'compose-output');
+            setTimeout(listContainers, 3000);
+        }
+
+        async function composeDown() {
+            const file = getComposeFile();
+            await runTool('run_command', { command: `docker-compose -f ${file} down` }, 'compose-output');
+            setTimeout(listContainers, 2000);
+        }
+
+        async function composeRestart() {
+            const file = getComposeFile();
+            await runTool('run_command', { command: `docker-compose -f ${file} restart` }, 'compose-output');
+            setTimeout(listContainers, 3000);
+        }
+
+        async function composeBuild() {
+            const file = getComposeFile();
+            await runTool('run_command', { command: `docker-compose -f ${file} build` }, 'compose-output');
+        }
+
+        async function composePull() {
+            const file = getComposeFile();
+            await runTool('run_command', { command: `docker-compose -f ${file} pull` }, 'compose-output');
+        }
+
+        async function composePs() {
+            const file = getComposeFile();
+            await runTool('run_command', { command: `docker-compose -f ${file} ps` }, 'compose-output');
+        }
+
+        async function composeLogs() {
+            const file = getComposeFile();
+            await runTool('run_command', { command: `docker-compose -f ${file} logs --tail 50` }, 'compose-output');
+        }
+
+        async function composeConfig() {
+            const file = getComposeFile();
+            await runTool('run_command', { command: `docker-compose -f ${file} config` }, 'compose-output');
+        }
+
+        // Images
+        async function listImages() {
+            await runTool('run_command', { command: 'docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.CreatedSince}}"' }, 'images-output');
+        }
+
+        async function danglingImages() {
+            await runTool('run_command', { command: 'docker images -f "dangling=true"' }, 'images-output');
+        }
+
+        async function pullImage() {
+            const image = document.getElementById('pull-image').value;
+            if (!image) { alert('Please enter image name'); return; }
+            await runTool('run_command', { command: `docker pull ${image}` }, 'images-output');
+        }
+
+        async function removeImage() {
+            const image = document.getElementById('remove-image').value;
+            if (!image) { alert('Please enter image name'); return; }
+            if (!confirm(`Remove image ${image}?`)) return;
+            await runTool('run_command', { command: `docker rmi ${image}` }, 'images-output');
+        }
+
+        async function pruneImages() {
+            if (!confirm('Remove all unused images?')) return;
+            await runTool('run_command', { command: 'docker image prune -af' }, 'images-output');
+        }
+
+        // Volumes
+        async function listVolumes() {
+            await runTool('run_command', { command: 'docker volume ls --format "table {{.Name}}\t{{.Driver}}\t{{.Scope}}"' }, 'volumes-output');
+        }
+
+        async function createVolume() {
+            const name = document.getElementById('create-volume').value;
+            if (!name) { alert('Please enter volume name'); return; }
+            await runTool('run_command', { command: `docker volume create ${name}` }, 'volumes-output');
+        }
+
+        async function inspectVolume() {
+            const name = document.getElementById('volume-name').value;
+            if (!name) return;
+            await runTool('run_command', { command: `docker volume inspect ${name}` }, 'volumes-output');
+        }
+
+        async function removeVolume() {
+            const name = document.getElementById('volume-name').value;
+            if (!name) return;
+            if (!confirm(`Remove volume ${name}?`)) return;
+            await runTool('run_command', { command: `docker volume rm ${name}` }, 'volumes-output');
+        }
+
+        async function pruneVolumes() {
+            if (!confirm('Remove all unused volumes?')) return;
+            await runTool('run_command', { command: 'docker volume prune -f' }, 'volumes-output');
+        }
+
+        // Networks
+        async function listNetworks() {
+            await runTool('run_command', { command: 'docker network ls --format "table {{.Name}}\t{{.Driver}}\t{{.Scope}}"' }, 'networks-output');
+        }
+
+        async function createNetwork() {
+            const name = document.getElementById('create-network').value;
+            const driver = document.getElementById('network-driver').value;
+            if (!name) { alert('Please enter network name'); return; }
+            await runTool('run_command', { command: `docker network create --driver ${driver} ${name}` }, 'networks-output');
+        }
+
+        async function pruneNetworks() {
+            if (!confirm('Remove all unused networks?')) return;
+            await runTool('run_command', { command: 'docker network prune -f' }, 'networks-output');
+        }
+
+        // System
+        async function dockerInfo() {
+            await runTool('run_command', { command: 'docker info' }, 'system-output');
+        }
+
+        async function dockerVersion() {
+            await runTool('run_command', { command: 'docker version' }, 'system-output');
+        }
+
+        async function dockerDiskUsage() {
+            await runTool('run_command', { command: 'docker system df -v' }, 'system-output');
+        }
+
+        async function dockerEvents() {
+            await runTool('run_command', { command: 'docker events --since 1h --until now' }, 'system-output');
+        }
+
+        async function dockerStats() {
+            await runTool('run_command', { command: 'docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}"' }, 'system-output');
+        }
+
+        async function pruneSystem() {
+            if (!confirm('This will remove all stopped containers, unused networks, dangling images, and build cache. Continue?')) return;
+            await runTool('run_command', { command: 'docker system prune -f' }, 'system-output');
+            setTimeout(listContainers, 2000);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            listContainers();
+        });
+    </script>
+</body>
+</html>

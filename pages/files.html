@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File System - STARFLEET COMMAND</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/pages/shared/lcars-styles.css">
+    <style>
+        .file-browser {
+            background: rgba(0,0,30,0.8);
+            border: 2px solid var(--lcars-blue);
+            border-radius: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(85,85,255,0.3);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .file-item:hover {
+            background: rgba(0,100,150,0.3);
+        }
+
+        .file-item:last-child {
+            border-bottom: none;
+        }
+
+        .file-icon {
+            font-size: 1.3rem;
+        }
+
+        .file-name {
+            flex: 1;
+            font-family: 'Rajdhani', monospace;
+            color: var(--lcars-light-blue);
+        }
+
+        .file-type {
+            font-size: 0.8rem;
+            color: var(--lcars-purple);
+            text-transform: uppercase;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            background: rgba(0,0,50,0.5);
+            border-radius: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .breadcrumb-item {
+            color: var(--warp-core-blue);
+            cursor: pointer;
+            font-family: 'Rajdhani', monospace;
+        }
+
+        .breadcrumb-item:hover {
+            color: var(--enterprise-gold);
+        }
+
+        .breadcrumb-separator {
+            color: var(--lcars-gray);
+        }
+
+        .file-editor {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        .editor-textarea {
+            min-height: 300px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="lcars-container">
+        <!-- Header -->
+        <div class="lcars-header">
+            <div class="header-left">
+                <a href="/pages/index.html" class="back-btn">← BACK</a>
+                <div>
+                    <h1 class="page-title">📁 File System</h1>
+                    <p class="page-subtitle">File & Directory Management</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="status-badge">
+                    <div class="status-dot"></div>
+                    <span class="status-text">ONLINE</span>
+                </div>
+                <span id="stardate" class="stardate"></span>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="lcars-panel">
+            <div class="panel-header">
+                <span class="panel-icon">⚡</span>
+                <h2 class="panel-title">Quick Actions</h2>
+            </div>
+            <div class="panel-content">
+                <div class="quick-actions">
+                    <button class="lcars-btn primary" onclick="listCurrentDir()">📁 List Current</button>
+                    <button class="lcars-btn" onclick="goToHome()">🏠 Home Dir</button>
+                    <button class="lcars-btn" onclick="showHidden()">👁️ Show Hidden</button>
+                    <button class="lcars-btn" onclick="treeView()">🌳 Tree View</button>
+                    <button class="lcars-btn" onclick="diskUsage()">💾 Disk Usage</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="two-column">
+            <!-- File Browser Panel -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">📂</span>
+                    <h2 class="panel-title">File Browser</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="form-group">
+                        <label class="form-label">Directory Path</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="browse-path" class="lcars-input" value="." placeholder="/path/to/directory">
+                            <button class="lcars-btn" onclick="browsePath()">Browse</button>
+                        </div>
+                    </div>
+                    <div class="breadcrumb" id="breadcrumb">
+                        <span class="breadcrumb-item" onclick="navigateToPath('.')">root</span>
+                    </div>
+                    <div id="file-list" class="file-browser">
+                        <div class="file-item">
+                            <span class="file-icon">⏳</span>
+                            <span class="file-name">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Read File Panel -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">📄</span>
+                    <h2 class="panel-title">Read File</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="form-group">
+                        <label class="form-label">File Path</label>
+                        <input type="text" id="read-path" class="lcars-input" placeholder="/path/to/file.txt">
+                    </div>
+                    <button class="lcars-btn" onclick="readFile()">Read File</button>
+                    <div id="read-output" style="margin-top: 15px;">
+                        <div class="terminal-output">Select a file to view its contents...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="two-column">
+            <!-- Write File Panel -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">✏️</span>
+                    <h2 class="panel-title">Write File</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="file-editor">
+                        <div class="form-group">
+                            <label class="form-label">File Path</label>
+                            <input type="text" id="write-path" class="lcars-input" placeholder="/path/to/file.txt">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Content</label>
+                            <textarea id="write-content" class="lcars-textarea editor-textarea" placeholder="Enter file content..."></textarea>
+                        </div>
+                        <div class="quick-actions">
+                            <button class="lcars-btn success" onclick="writeFile()">💾 Save File</button>
+                            <button class="lcars-btn" onclick="loadForEdit()">📂 Load File</button>
+                            <button class="lcars-btn danger" onclick="clearEditor()">🗑️ Clear</button>
+                        </div>
+                    </div>
+                    <div id="write-output" style="margin-top: 15px;"></div>
+                </div>
+            </div>
+
+            <!-- Directory Operations Panel -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">📂</span>
+                    <h2 class="panel-title">Directory Operations</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="form-group">
+                        <label class="form-label">Create Directory</label>
+                        <input type="text" id="mkdir-path" class="lcars-input" placeholder="/path/to/new/directory">
+                    </div>
+                    <button class="lcars-btn success" onclick="createDirectory()" style="margin-bottom: 20px;">Create Directory</button>
+
+                    <div class="form-group">
+                        <label class="form-label">Delete File/Directory</label>
+                        <input type="text" id="delete-path" class="lcars-input" placeholder="/path/to/delete">
+                    </div>
+                    <button class="lcars-btn danger" onclick="deletePath()">Delete</button>
+
+                    <div id="dir-output" style="margin-top: 15px;">
+                        <div class="terminal-output">Directory operations output...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="two-column">
+            <!-- Copy/Move Panel -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">📋</span>
+                    <h2 class="panel-title">Copy / Move Files</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="form-group">
+                        <label class="form-label">Source Path</label>
+                        <input type="text" id="source-path" class="lcars-input" placeholder="/path/to/source">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Destination Path</label>
+                        <input type="text" id="dest-path" class="lcars-input" placeholder="/path/to/destination">
+                    </div>
+                    <div class="quick-actions">
+                        <button class="lcars-btn" onclick="copyFile()">📋 Copy</button>
+                        <button class="lcars-btn" onclick="moveFile()">📦 Move</button>
+                        <button class="lcars-btn" onclick="renameFile()">✏️ Rename</button>
+                    </div>
+                    <div id="copy-output" style="margin-top: 15px;">
+                        <div class="terminal-output">Copy/Move output...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- File Info Panel -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">ℹ️</span>
+                    <h2 class="panel-title">File Information</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="form-group">
+                        <label class="form-label">File/Directory Path</label>
+                        <input type="text" id="info-path" class="lcars-input" placeholder="/path/to/file">
+                    </div>
+                    <div class="quick-actions">
+                        <button class="lcars-btn" onclick="fileInfo()">Get Info</button>
+                        <button class="lcars-btn" onclick="fileSize()">Size</button>
+                        <button class="lcars-btn" onclick="filePermissions()">Permissions</button>
+                    </div>
+                    <div id="info-output" style="margin-top: 15px;">
+                        <div class="terminal-output">File information will appear here...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Panel -->
+        <div class="lcars-panel">
+            <div class="panel-header">
+                <span class="panel-icon">🔍</span>
+                <h2 class="panel-title">Search Files</h2>
+            </div>
+            <div class="panel-content">
+                <div class="two-column">
+                    <div class="form-group">
+                        <label class="form-label">Search Pattern</label>
+                        <input type="text" id="search-pattern" class="lcars-input" placeholder="*.js or search text">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Search Directory</label>
+                        <input type="text" id="search-dir" class="lcars-input" value="." placeholder="/path/to/search">
+                    </div>
+                </div>
+                <div class="quick-actions">
+                    <button class="lcars-btn primary" onclick="searchByName()">🔍 Find by Name</button>
+                    <button class="lcars-btn" onclick="searchContent()">📝 Search Content</button>
+                    <button class="lcars-btn" onclick="findLargeFiles()">📊 Large Files</button>
+                    <button class="lcars-btn" onclick="findRecentFiles()">🕐 Recent Files</button>
+                </div>
+                <div id="search-output" style="margin-top: 15px;">
+                    <div class="terminal-output">Search results will appear here...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="lcars-footer">
+            <p class="footer-text">STARFLEET COMMAND • File System Module • LCARS Interface</p>
+        </div>
+    </div>
+
+    <script src="/pages/shared/lcars-core.js"></script>
+    <script>
+        let currentPath = '.';
+
+        // File Browser
+        async function browsePath() {
+            const path = document.getElementById('browse-path').value || '.';
+            currentPath = path;
+            showLoading('file-list', 'SCANNING DIRECTORY...');
+            
+            const result = await executeTool('list_files', { directory: path, hidden: false });
+            
+            if (result.success) {
+                try {
+                    const files = JSON.parse(result.output);
+                    renderFileList(files);
+                    updateBreadcrumb(path);
+                } catch {
+                    document.getElementById('file-list').innerHTML = `<div class="terminal-output error">Error parsing file list</div>`;
+                }
+            } else {
+                document.getElementById('file-list').innerHTML = `<div class="terminal-output error">${result.error}</div>`;
+            }
+        }
+
+        function renderFileList(files) {
+            const container = document.getElementById('file-list');
+            
+            if (files.length === 0) {
+                container.innerHTML = '<div class="file-item"><span class="file-icon">📭</span><span class="file-name">Directory is empty</span></div>';
+                return;
+            }
+
+            // Sort: directories first, then files
+            files.sort((a, b) => {
+                if (a.type === 'directory' && b.type !== 'directory') return -1;
+                if (a.type !== 'directory' && b.type === 'directory') return 1;
+                return a.name.localeCompare(b.name);
+            });
+
+            container.innerHTML = files.map(file => {
+                const icon = file.type === 'directory' ? '📁' : getFileIcon(file.name);
+                return `
+                    <div class="file-item" onclick="${file.type === 'directory' ? `navigateToPath('${file.path}')` : `selectFile('${file.path}')`}">
+                        <span class="file-icon">${icon}</span>
+                        <span class="file-name">${file.name}</span>
+                        <span class="file-type">${file.type}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getFileIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const icons = {
+                js: '📜', ts: '📘', json: '📋', html: '🌐', css: '🎨',
+                md: '📝', txt: '📄', yml: '⚙️', yaml: '⚙️', sh: '🖥️',
+                py: '🐍', java: '☕', rb: '💎', go: '🔵', rs: '🦀',
+                png: '🖼️', jpg: '🖼️', gif: '🖼️', svg: '🎨',
+                zip: '📦', tar: '📦', gz: '📦',
+                pdf: '📕', doc: '📘', xls: '📊'
+            };
+            return icons[ext] || '📄';
+        }
+
+        function navigateToPath(path) {
+            document.getElementById('browse-path').value = path;
+            browsePath();
+        }
+
+        function selectFile(path) {
+            document.getElementById('read-path').value = path;
+            document.getElementById('write-path').value = path;
+            document.getElementById('info-path').value = path;
+            readFile();
+        }
+
+        function updateBreadcrumb(path) {
+            const parts = path.split(/[\/\\]/).filter(Boolean);
+            const breadcrumb = document.getElementById('breadcrumb');
+            
+            let html = '<span class="breadcrumb-item" onclick="navigateToPath(\'.\')">root</span>';
+            let accumulated = '';
+            
+            for (const part of parts) {
+                accumulated += (accumulated ? '/' : '') + part;
+                html += `<span class="breadcrumb-separator">/</span>`;
+                html += `<span class="breadcrumb-item" onclick="navigateToPath('${accumulated}')">${part}</span>`;
+            }
+            
+            breadcrumb.innerHTML = html;
+        }
+
+        // List functions
+        function listCurrentDir() {
+            document.getElementById('browse-path').value = '.';
+            browsePath();
+        }
+
+        function goToHome() {
+            navigateToPath(process.env.HOME || process.env.USERPROFILE || '~');
+        }
+
+        async function showHidden() {
+            const path = document.getElementById('browse-path').value || '.';
+            showLoading('file-list', 'SCANNING WITH HIDDEN FILES...');
+            
+            const result = await executeTool('list_files', { directory: path, hidden: true });
+            
+            if (result.success) {
+                try {
+                    const files = JSON.parse(result.output);
+                    renderFileList(files);
+                } catch {
+                    document.getElementById('file-list').innerHTML = `<div class="terminal-output error">Error parsing file list</div>`;
+                }
+            }
+        }
+
+        async function treeView() {
+            const path = document.getElementById('browse-path').value || '.';
+            await runTool('run_command', { command: `find ${path} -type f -o -type d | head -50` }, 'file-list');
+        }
+
+        async function diskUsage() {
+            const path = document.getElementById('browse-path').value || '.';
+            await runTool('run_command', { command: `du -sh ${path}/* 2>/dev/null | head -20` }, 'file-list');
+        }
+
+        // Read File
+        async function readFile() {
+            const path = document.getElementById('read-path').value;
+            if (!path) {
+                alert('Please enter a file path');
+                return;
+            }
+            await runTool('read_file', { filepath: path }, 'read-output');
+        }
+
+        // Write File
+        async function writeFile() {
+            const path = document.getElementById('write-path').value;
+            const content = document.getElementById('write-content').value;
+            
+            if (!path) {
+                alert('Please enter a file path');
+                return;
+            }
+            
+            await runTool('write_file', { filepath: path, content: content }, 'write-output');
+        }
+
+        async function loadForEdit() {
+            const path = document.getElementById('write-path').value;
+            if (!path) {
+                alert('Please enter a file path');
+                return;
+            }
+            
+            const result = await executeTool('read_file', { filepath: path });
+            if (result.success) {
+                document.getElementById('write-content').value = result.output;
+                playSuccessSound();
+            } else {
+                alert('Error loading file: ' + result.error);
+                playErrorSound();
+            }
+        }
+
+        function clearEditor() {
+            document.getElementById('write-content').value = '';
+        }
+
+        // Directory Operations
+        async function createDirectory() {
+            const path = document.getElementById('mkdir-path').value;
+            if (!path) {
+                alert('Please enter a directory path');
+                return;
+            }
+            await runTool('create_directory', { dirpath: path }, 'dir-output');
+            browsePath();
+        }
+
+        async function deletePath() {
+            const path = document.getElementById('delete-path').value;
+            if (!path) {
+                alert('Please enter a path to delete');
+                return;
+            }
+            if (!confirm(`Are you sure you want to delete "${path}"?`)) return;
+            await runTool('run_command', { command: `rm -rf "${path}"` }, 'dir-output');
+            browsePath();
+        }
+
+        // Copy/Move
+        async function copyFile() {
+            const src = document.getElementById('source-path').value;
+            const dest = document.getElementById('dest-path').value;
+            if (!src || !dest) {
+                alert('Please enter both source and destination paths');
+                return;
+            }
+            await runTool('run_command', { command: `cp -r "${src}" "${dest}"` }, 'copy-output');
+        }
+
+        async function moveFile() {
+            const src = document.getElementById('source-path').value;
+            const dest = document.getElementById('dest-path').value;
+            if (!src || !dest) {
+                alert('Please enter both source and destination paths');
+                return;
+            }
+            await runTool('run_command', { command: `mv "${src}" "${dest}"` }, 'copy-output');
+            browsePath();
+        }
+
+        async function renameFile() {
+            const src = document.getElementById('source-path').value;
+            const dest = document.getElementById('dest-path').value;
+            if (!src || !dest) {
+                alert('Please enter source (old name) and destination (new name)');
+                return;
+            }
+            await runTool('run_command', { command: `mv "${src}" "${dest}"` }, 'copy-output');
+            browsePath();
+        }
+
+        // File Info
+        async function fileInfo() {
+            const path = document.getElementById('info-path').value;
+            if (!path) {
+                alert('Please enter a file path');
+                return;
+            }
+            await runTool('run_command', { command: `stat "${path}"` }, 'info-output');
+        }
+
+        async function fileSize() {
+            const path = document.getElementById('info-path').value;
+            if (!path) {
+                alert('Please enter a file path');
+                return;
+            }
+            await runTool('run_command', { command: `du -sh "${path}"` }, 'info-output');
+        }
+
+        async function filePermissions() {
+            const path = document.getElementById('info-path').value;
+            if (!path) {
+                alert('Please enter a file path');
+                return;
+            }
+            await runTool('run_command', { command: `ls -la "${path}"` }, 'info-output');
+        }
+
+        // Search
+        async function searchByName() {
+            const pattern = document.getElementById('search-pattern').value;
+            const dir = document.getElementById('search-dir').value || '.';
+            if (!pattern) {
+                alert('Please enter a search pattern');
+                return;
+            }
+            await runTool('run_command', { command: `find "${dir}" -name "${pattern}" 2>/dev/null | head -50` }, 'search-output');
+        }
+
+        async function searchContent() {
+            const pattern = document.getElementById('search-pattern').value;
+            const dir = document.getElementById('search-dir').value || '.';
+            if (!pattern) {
+                alert('Please enter search text');
+                return;
+            }
+            await runTool('search_files', { pattern, directory: dir }, 'search-output');
+        }
+
+        async function findLargeFiles() {
+            const dir = document.getElementById('search-dir').value || '.';
+            await runTool('run_command', { command: `find "${dir}" -type f -exec du -h {} + 2>/dev/null | sort -rh | head -20` }, 'search-output');
+        }
+
+        async function findRecentFiles() {
+            const dir = document.getElementById('search-dir').value || '.';
+            await runTool('run_command', { command: `find "${dir}" -type f -mtime -7 2>/dev/null | head -30` }, 'search-output');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            browsePath();
+        });
+    </script>
+</body>
+</html>

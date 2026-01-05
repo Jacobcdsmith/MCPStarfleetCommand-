@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STARFLEET MCP Integration Console</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            /* LCARS Color Palette */
+            --lcars-blue: #5555ff;
+            --lcars-orange: #ff9900;
+            --lcars-red: #cc6666;
+            --lcars-purple: #cc99cc;
+            --lcars-yellow: #ffff99;
+            --lcars-green: #99cc99;
+            --lcars-light-blue: #99ccff;
+            --lcars-dark-blue: #000080;
+            --lcars-black: #000000;
+            --lcars-gray: #333366;
+            --lcars-white: #ffffff;
+            
+            /* Enterprise Colors */
+            --enterprise-gold: #ffd700;
+            --enterprise-silver: #c0c0c0;
+            --warp-core-blue: #00d4ff;
+            --alert-red: #ff0000;
+            --console-green: #00ff41;
+            
+            /* Dark Theme */
+            --bg-primary: #0a0f1c;
+            --bg-secondary: #1a1f2e;
+            --bg-tertiary: #2a2f3e;
+            --text-primary: #e0e6ed;
+            --text-secondary: #a0a6b0;
+            --border-color: #3a3f4e;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: radial-gradient(ellipse at center, #001122 0%, #000000 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        /* Starfield Background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(1px 1px at 20px 30px, rgba(255,255,255,0.5), transparent),
+                radial-gradient(1px 1px at 40px 70px, rgba(255,255,255,0.3), transparent),
+                radial-gradient(1px 1px at 90px 40px, rgba(255,255,255,0.4), transparent),
+                radial-gradient(1px 1px at 130px 80px, rgba(255,255,255,0.2), transparent);
+            background-repeat: repeat;
+            background-size: 200px 100px;
+            animation: starfield 300s linear infinite;
+            opacity: 0.2;
+            z-index: -1;
+        }
+
+        @keyframes starfield {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-100px); }
+        }
+
+        /* Main Layout */
+        .console-container {
+            display: grid;
+            grid-template-areas: 
+                "header header header"
+                "servers toolbox inspector"
+                "feeds feeds feeds";
+            grid-template-columns: 350px 1fr 400px;
+            grid-template-rows: auto 1fr auto;
+            min-height: 100vh;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1920px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .console-header {
+            grid-area: header;
+            background: linear-gradient(45deg, var(--lcars-dark-blue) 0%, var(--lcars-blue) 100%);
+            border: 2px solid var(--lcars-orange);
+            border-radius: 25px 0 25px 0;
+            padding: 25px 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .console-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 80px;
+            height: 100%;
+            background: var(--lcars-orange);
+            border-radius: 0 23px 23px 0;
+        }
+
+        .console-header::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: linear-gradient(90deg, 
+                var(--lcars-orange) 0%, 
+                var(--lcars-red) 25%, 
+                var(--lcars-yellow) 50%, 
+                var(--lcars-blue) 75%, 
+                var(--lcars-orange) 100%);
+            animation: headerStrip 4s linear infinite;
+        }
+
+        @keyframes headerStrip {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 400% 0%; }
+        }
+
+        .console-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--enterprise-gold);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 20px var(--enterprise-gold);
+            position: relative;
+            z-index: 2;
+        }
+
+        .console-subtitle {
+            font-size: 1.1rem;
+            color: var(--lcars-light-blue);
+            margin-top: 8px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Servers Panel */
+        .servers-panel {
+            grid-area: servers;
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+            border: 2px solid var(--lcars-purple);
+            border-radius: 20px 0 20px 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .servers-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 60px;
+            height: 100%;
+            background: var(--lcars-purple);
+            border-radius: 0 18px 18px 0;
+            opacity: 0.8;
+        }
+
+        .panel-header {
+            background: var(--lcars-purple);
+            color: var(--lcars-black);
+            padding: 20px;
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            font-size: 1.3rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .panel-content {
+            padding: 25px;
+            height: calc(100% - 70px);
+            overflow-y: auto;
+        }
+
+        .add-server-btn {
+            background: var(--lcars-orange);
+            color: var(--lcars-black);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 15px 0 15px 0;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .add-server-btn:hover {
+            background: var(--enterprise-gold);
+            box-shadow: 0 0 20px var(--enterprise-gold);
+        }
+
+        .server-card {
+            background: linear-gradient(45deg, var(--bg-tertiary) 0%, rgba(0,0,50,0.8) 100%);
+            border: 2px solid var(--lcars-blue);
+            border-radius: 15px 0 15px 0;
+            padding: 20px;
+            margin-bottom: 15px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .server-card:hover {
+            border-color: var(--enterprise-gold);
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.3);
+        }
+
+        .server-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--lcars-blue);
+            transition: all 0.3s ease;
+        }
+
+        .server-card.active::before {
+            background: var(--console-green);
+            width: 8px;
+        }
+
+        .server-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .server-name {
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            color: var(--enterprise-gold);
+            font-size: 1.1rem;
+        }
+
+        .server-status {
+            padding: 4px 12px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .server-status.online {
+            background: var(--console-green);
+            color: var(--lcars-black);
+        }
+
+        .server-status.offline {
+            background: var(--alert-red);
+            color: var(--lcars-white);
+        }
+
+        .server-info {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .server-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .server-btn {
+            background: var(--lcars-gray);
+            color: var(--text-primary);
+            border: 1px solid var(--lcars-blue);
+            padding: 8px 16px;
+            border-radius: 10px 0 10px 0;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .server-btn:hover {
+            background: var(--lcars-blue);
+            color: var(--lcars-white);
+        }
+
+        /* Toolbox Panel */
+        .toolbox-panel {
+            grid-area: toolbox;
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+            border: 2px solid var(--lcars-orange);
+            border-radius: 20px 0 20px 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .toolbox-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 60px;
+            height: 100%;
+            background: var(--lcars-orange);
+            border-radius: 0 18px 18px 0;
+            opacity: 0.8;
+        }
+
+        .toolbox-header {
+            background: var(--lcars-orange);
+            color: var(--lcars-black);
+        }
+
+        .tool-search {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 12px;
+            width: 100%;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            font-family: 'Rajdhani', sans-serif;
+        }
+
+        .tool-card {
+            background: linear-gradient(45deg, var(--bg-tertiary) 0%, rgba(0,0,80,0.3) 100%);
+            border: 2px solid var(--lcars-blue);
+            border-radius: 15px 0 15px 0;
+            padding: 20px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tool-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--lcars-blue);
+        }
+
+        .tool-card:hover {
+            border-color: var(--enterprise-gold);
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.2);
+        }
+
+        .tool-card:hover::before {
+            background: var(--enterprise-gold);
+            width: 8px;
+        }
+
+        .tool-name {
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            color: var(--enterprise-gold);
+            font-size: 1rem;
+            margin-bottom: 8px;
+        }
+
+        .tool-description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        .tool-params {
+            display: none;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .tool-params.active {
+            display: block;
+        }
+
+        .param-group {
+            margin-bottom: 15px;
+        }
+
+        .param-label {
+            display: block;
+            color: var(--lcars-light-blue);
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+
+        .param-input {
+            width: 100%;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 10px;
+            border-radius: 5px;
+            font-family: 'Rajdhani', sans-serif;
+        }
+
+        .param-input:focus {
+            border-color: var(--lcars-blue);
+            outline: none;
+            box-shadow: 0 0 10px rgba(85, 85, 255, 0.3);
+        }
+
+        .execute-btn {
+            background: linear-gradient(45deg, var(--console-green) 0%, var(--lcars-green) 100%);
+            color: var(--lcars-black);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 15px 0 15px 0;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        .execute-btn:hover {
+            box-shadow: 0 0 25px var(--console-green);
+            transform: translateY(-2px);
+        }
+
+        /* Inspector Panel */
+        .inspector-panel {
+            grid-area: inspector;
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+            border: 2px solid var(--lcars-red);
+            border-radius: 20px 0 20px 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .inspector-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 60px;
+            height: 100%;
+            background: var(--lcars-red);
+            border-radius: 0 18px 18px 0;
+            opacity: 0.8;
+        }
+
+        .inspector-header {
+            background: var(--lcars-red);
+            color: var(--lcars-white);
+        }
+
+        .json-viewer {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            max-height: 300px;
+            margin-bottom: 20px;
+        }
+
+        .json-key {
+            color: var(--lcars-light-blue);
+        }
+
+        .json-string {
+            color: var(--console-green);
+        }
+
+        .json-number {
+            color: var(--lcars-yellow);
+        }
+
+        .json-boolean {
+            color: var(--lcars-purple);
+        }
+
+        /* Messages Feed */
+        .messages-feed {
+            grid-area: feeds;
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+            border: 2px solid var(--lcars-green);
+            border-radius: 20px 0 20px 0;
+            max-height: 300px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .messages-feed::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 80px;
+            height: 100%;
+            background: var(--lcars-green);
+            border-radius: 0 18px 18px 0;
+            opacity: 0.8;
+        }
+
+        .feed-header {
+            background: var(--lcars-green);
+            color: var(--lcars-black);
+            padding: 15px 20px;
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            text-transform: uppercase;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .feed-content {
+            padding: 20px;
+            height: calc(100% - 60px);
+            overflow-y: auto;
+        }
+
+        .message-item {
+            background: rgba(0,0,0,0.3);
+            border-left: 4px solid var(--lcars-blue);
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .message-item.success {
+            border-left-color: var(--console-green);
+        }
+
+        .message-item.error {
+            border-left-color: var(--alert-red);
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .message-type {
+            font-weight: 700;
+            color: var(--enterprise-gold);
+            font-size: 0.9rem;
+        }
+
+        .message-time {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+
+        .message-content {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+            border: 3px solid var(--lcars-orange);
+            border-radius: 25px 0 25px 0;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            position: relative;
+        }
+
+        .modal::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 60px;
+            height: 100%;
+            background: var(--lcars-orange);
+            border-radius: 0 22px 22px 0;
+            opacity: 0.8;
+        }
+
+        .modal-header {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--enterprise-gold);
+            margin-bottom: 25px;
+            text-transform: uppercase;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            color: var(--lcars-light-blue);
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .form-input,
+        .form-select {
+            width: 100%;
+            background: var(--bg-primary);
+            border: 2px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1rem;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            border-color: var(--lcars-blue);
+            outline: none;
+            box-shadow: 0 0 15px rgba(85, 85, 255, 0.3);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+
+        .modal-btn {
+            padding: 12px 24px;
+            border-radius: 15px 0 15px 0;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid;
+        }
+
+        .modal-btn.primary {
+            background: var(--lcars-blue);
+            border-color: var(--lcars-blue);
+            color: var(--lcars-white);
+        }
+
+        .modal-btn.primary:hover {
+            background: var(--enterprise-gold);
+            border-color: var(--enterprise-gold);
+            box-shadow: 0 0 20px var(--enterprise-gold);
+        }
+
+        .modal-btn.secondary {
+            background: transparent;
+            border-color: var(--text-secondary);
+            color: var(--text-secondary);
+        }
+
+        .modal-btn.secondary:hover {
+            background: var(--text-secondary);
+            color: var(--bg-primary);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1400px) {
+            .console-container {
+                grid-template-areas: 
+                    "header header"
+                    "servers toolbox"
+                    "inspector inspector"
+                    "feeds feeds";
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .console-container {
+                grid-template-areas: 
+                    "header"
+                    "servers"
+                    "toolbox"
+                    "inspector"
+                    "feeds";
+                grid-template-columns: 1fr;
+                padding: 15px;
+                gap: 15px;
+            }
+
+            .console-title {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="console-container">
+        <!-- Header -->
+        <div class="console-header">
+            <h1 class="console-title">MCP Integration Console</h1>
+            <p class="console-subtitle">Model Context Protocol Management Interface</p>
+        </div>
+
+        <!-- Servers Panel -->
+        <div class="servers-panel">
+            <div class="panel-header">
+                <span><i class="fas fa-server"></i> Servers</span>
+                <button class="add-server-btn" onclick="showAddServerModal()">
+                    <i class="fas fa-plus"></i> Add Server
+                </button>
+            </div>
+            <div class="panel-content" id="servers-content">
+                <!-- Default servers will be populated here -->
+            </div>
+        </div>
+
+        <!-- Toolbox Panel -->
+        <div class="toolbox-panel">
+            <div class="panel-header toolbox-header">
+                <span><i class="fas fa-wrench"></i> Toolbox</span>
+                <span id="active-server-name">Select Server</span>
+            </div>
+            <div class="panel-content">
+                <input type="text" class="tool-search" placeholder="Search tools..." onkeyup="filterTools(this.value)">
+                <div id="tools-container">
+                    <div class="tool-card" style="text-align: center; color: var(--text-secondary); padding: 40px;">
+                        <i class="fas fa-arrow-left" style="font-size: 2rem; margin-bottom: 15px;"></i>
+                        <p>Select a server to view available tools</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inspector Panel -->
+        <div class="inspector-panel">
+            <div class="panel-header inspector-header">
+                <span><i class="fas fa-search"></i> JSON Inspector</span>
+                <button class="server-btn" onclick="clearInspector()">Clear</button>
+            </div>
+            <div class="panel-content">
+                <div class="json-viewer" id="json-inspector">
+                    <div style="text-align: center; color: var(--text-secondary); padding: 20px;">
+                        <i class="fas fa-eye" style="font-size: 2rem; margin-bottom: 15px;"></i>
+                        <p>Execute a tool to inspect JSON responses</p>
+                    </div>
+                </div>
+                
+                <!-- Prompt Cards Section -->
+                <div style="margin-top: 20px;">
+                    <h4 style="color: var(--lcars-light-blue); margin-bottom: 15px;">
+                        <i class="fas fa-comments"></i> Prompt Cards
+                    </h4>
+                    <div id="prompt-cards">
+                        <div class="tool-card" onclick="sendPromptToConversation('System status report')">
+                            <div class="tool-name">System Status</div>
+                            <div class="tool-description">Get comprehensive system information</div>
+                        </div>
+                        <div class="tool-card" onclick="sendPromptToConversation('List available development tools')">
+                            <div class="tool-name">Dev Tools</div>
+                            <div class="tool-description">Show available development utilities</div>
+                        </div>
+                        <div class="tool-card" onclick="sendPromptToConversation('Check repository status and recent changes')">
+                            <div class="tool-name">Git Overview</div>
+                            <div class="tool-description">Repository status and recent activity</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Messages & Runs Feed -->
+        <div class="messages-feed">
+            <div class="feed-header">
+                <span><i class="fas fa-stream"></i> Runs & Messages</span>
+                <div>
+                    <button class="server-btn" onclick="exportRunsData()" style="margin-right: 10px;">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                    <button class="server-btn" onclick="clearMessagesFeed()">
+                        <i class="fas fa-trash"></i> Clear
+                    </button>
+                </div>
+            </div>
+            <div class="feed-content" id="messages-content">
+                <div class="message-item">
+                    <div class="message-header">
+                        <span class="message-type">SYSTEM</span>
+                        <span class="message-time">Just now</span>
+                    </div>
+                    <div class="message-content">MCP Integration Console initialized successfully</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Server Modal -->
+    <div class="modal-overlay" id="add-server-modal">
+        <div class="modal">
+            <h2 class="modal-header">Add MCP Server</h2>
+            <form id="add-server-form" onsubmit="return addServer(event)">
+                <div class="form-group">
+                    <label class="form-label">Server Name</label>
+                    <input type="text" class="form-input" name="name" required placeholder="My MCP Server">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Transport Type</label>
+                    <select class="form-select" name="transport" onchange="updateTransportFields(this.value)">
+                        <option value="stdio">STDIO</option>
+                        <option value="http">HTTP</option>
+                    </select>
+                </div>
+                <div class="form-group" id="stdio-fields">
+                    <label class="form-label">Command</label>
+                    <input type="text" class="form-input" name="command" placeholder="node server.js">
+                </div>
+                <div class="form-group" id="http-fields" style="display: none;">
+                    <label class="form-label">HTTP URL</label>
+                    <input type="url" class="form-input" name="url" placeholder="http://localhost:3001">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <input type="text" class="form-input" name="description" placeholder="Server description">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="modal-btn secondary" onclick="hideAddServerModal()">Cancel</button>
+                    <button type="submit" class="modal-btn primary">Add Server</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Config Generator Modal -->
+    <div class="modal-overlay" id="config-modal">
+        <div class="modal">
+            <h2 class="modal-header">Client Configuration</h2>
+            <div class="form-group">
+                <label class="form-label">Configuration Format</label>
+                <select class="form-select" id="config-format" onchange="generateConfig()">
+                    <option value="claude-desktop">Claude Desktop</option>
+                    <option value="vscode">VS Code</option>
+                    <option value="custom">Custom JSON</option>
+                </select>
+            </div>
+            <div class="json-viewer" id="config-output" style="min-height: 200px;"></div>
+            <div class="modal-actions">
+                <button type="button" class="modal-btn secondary" onclick="hideConfigModal()">Close</button>
+                <button type="button" class="modal-btn primary" onclick="copyConfig()">Copy Config</button>
+                <button type="button" class="modal-btn primary" onclick="downloadConfig()">Download</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Policy Settings Modal -->
+    <div class="modal-overlay" id="policy-modal">
+        <div class="modal">
+            <h2 class="modal-header">Policy Settings</h2>
+            <div class="form-group">
+                <label class="form-label">
+                    <input type="checkbox" id="policy-require-auth"> Require Authentication
+                </label>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 5px;">
+                    Require authentication for all MCP connections
+                </p>
+            </div>
+            <div class="form-group">
+                <label class="form-label">
+                    <input type="checkbox" id="policy-rate-limit"> Enable Rate Limiting
+                </label>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 5px;">
+                    Limit the number of requests per minute
+                </p>
+            </div>
+            <div class="form-group">
+                <label class="form-label">
+                    <input type="checkbox" id="policy-log-requests"> Log All Requests
+                </label>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 5px;">
+                    Log all incoming MCP requests for debugging
+                </p>
+            </div>
+            <div class="form-group">
+                <label class="form-label">
+                    <input type="checkbox" id="policy-sandbox-mode"> Sandbox Mode
+                </label>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 5px;">
+                    Run tools in isolated sandbox environment
+                </p>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="modal-btn secondary" onclick="hidePolicyModal()">Cancel</button>
+                <button type="button" class="modal-btn primary" onclick="savePolicySettings()">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let servers = new Map();
+        let activeServerId = null;
+        let messageId = 0;
+        let runData = [];
+
+        // Initialize with default servers
+        const defaultServers = [
+            {
+                id: 'local-enhanced',
+                name: 'Enhanced MCP Server (Local)',
+                transport: 'http',
+                url: 'http://localhost:3001',
+                description: 'Local enhanced MCP server with LCARS interface',
+                status: 'online',
+                tools: []
+            }
+        ];
+
+        // Audio feedback
+        function playBeep(frequency = 800, duration = 100) {
+            if (!window.AudioContext && !window.webkitAudioContext) return;
+            
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            oscillator.type = 'square';
+            
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration/1000);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration/1000);
+        }
+
+        // Server Management
+        function initializeServers() {
+            defaultServers.forEach(server => {
+                servers.set(server.id, server);
+            });
+            renderServers();
+            
+            // Auto-load first server
+            if (servers.size > 0) {
+                const firstServer = servers.values().next().value;
+                selectServer(firstServer.id);
+            }
+        }
+
+        function renderServers() {
+            const container = document.getElementById('servers-content');
+            container.innerHTML = '';
+
+            servers.forEach(server => {
+                const serverCard = createServerCard(server);
+                container.appendChild(serverCard);
+            });
+        }
+
+        function createServerCard(server) {
+            const card = document.createElement('div');
+            card.className = `server-card ${server.id === activeServerId ? 'active' : ''}`;
+            card.innerHTML = `
+                <div class="server-header">
+                    <div class="server-name">${server.name}</div>
+                    <div class="server-status ${server.status}">
+                        <i class="fas fa-${server.status === 'online' ? 'circle' : 'times-circle'}"></i>
+                        ${server.status.toUpperCase()}
+                    </div>
+                </div>
+                <div class="server-info">
+                    <i class="fas fa-${server.transport === 'http' ? 'globe' : 'terminal'}"></i>
+                    ${server.transport.toUpperCase()}: ${server.transport === 'http' ? server.url : server.command || 'stdio'}
+                </div>
+                <div class="server-info">${server.description}</div>
+                <div class="server-actions">
+                    <button class="server-btn" onclick="selectServer('${server.id}')">
+                        <i class="fas fa-play"></i> Connect
+                    </button>
+                    <button class="server-btn" onclick="testServer('${server.id}')">
+                        <i class="fas fa-heartbeat"></i> Test
+                    </button>
+                    <button class="server-btn" onclick="showConfigModal('${server.id}')">
+                        <i class="fas fa-cog"></i> Config
+                    </button>
+                    <button class="server-btn" onclick="removeServer('${server.id}')">
+                        <i class="fas fa-trash"></i> Remove
+                    </button>
+                </div>
+            `;
+            return card;
+        }
+
+        async function selectServer(serverId) {
+            playBeep();
+            activeServerId = serverId;
+            const server = servers.get(serverId);
+            
+            document.getElementById('active-server-name').textContent = server.name;
+            renderServers();
+            
+            addMessage('info', `Connected to ${server.name}`, 'Server connection established');
+            
+            // Load tools for this server
+            await loadServerTools(serverId);
+        }
+
+        async function loadServerTools(serverId) {
+            const server = servers.get(serverId);
+            if (!server) return;
+
+            try {
+                if (server.transport === 'http') {
+                    const response = await fetch(`${server.url}/api/tools`);
+                    const data = await response.json();
+                    server.tools = data.tools || [];
+                } else {
+                    // For stdio servers, we'd need to implement MCP protocol communication
+                    server.tools = getMockStdioTools();
+                }
+                
+                renderTools(server.tools);
+                addMessage('success', 'Tools Loaded', `Loaded ${server.tools.length} tools from ${server.name}`);
+            } catch (error) {
+                console.error('Failed to load tools:', error);
+                server.status = 'offline';
+                renderServers();
+                addMessage('error', 'Connection Failed', `Failed to connect to ${server.name}: ${error.message}`);
+            }
+        }
+
+        function getMockStdioTools() {
+            return [
+                { name: 'git_status', description: 'Get git repository status' },
+                { name: 'list_files', description: 'List files and directories' },
+                { name: 'system_info', description: 'Get system information' }
+            ];
+        }
+
+        async function testServer(serverId) {
+            playBeep();
+            const server = servers.get(serverId);
+            
+            addMessage('info', 'Testing Connection', `Testing connection to ${server.name}...`);
+            
+            try {
+                if (server.transport === 'http') {
+                    const response = await fetch(`${server.url}/api/status`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        server.status = 'online';
+                        addMessage('success', 'Connection Test', `Server is online. Uptime: ${Math.floor(data.uptime)}s`);
+                    } else {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                } else {
+                    // Mock stdio test
+                    server.status = Math.random() > 0.3 ? 'online' : 'offline';
+                    addMessage(server.status === 'online' ? 'success' : 'error', 
+                              'Connection Test', 
+                              `STDIO server is ${server.status}`);
+                }
+            } catch (error) {
+                server.status = 'offline';
+                addMessage('error', 'Connection Test Failed', error.message);
+            }
+            
+            renderServers();
+        }
+
+        // Tool Management
+        function renderTools(tools) {
+            const container = document.getElementById('tools-container');
+            container.innerHTML = '';
+
+            tools.forEach(tool => {
+                const toolCard = createToolCard(tool);
+                container.appendChild(toolCard);
+            });
+        }
+
+        function createToolCard(tool) {
+            const card = document.createElement('div');
+            card.className = 'tool-card';
+            card.innerHTML = `
+                <div class="tool-name">${tool.name}</div>
+                <div class="tool-description">${tool.description}</div>
+                <div class="tool-params" id="params-${tool.name}">
+                    ${generateToolParams(tool)}
+                    <button class="execute-btn" onclick="executeTool('${tool.name}')">
+                        <i class="fas fa-play"></i> Execute Tool
+                    </button>
+                </div>
+            `;
+            
+            card.addEventListener('click', () => {
+                playBeep(600, 80);
+                const params = card.querySelector('.tool-params');
+                const isActive = params.classList.contains('active');
+                
+                // Close all other tool params
+                document.querySelectorAll('.tool-params.active').forEach(p => p.classList.remove('active'));
+                
+                if (!isActive) {
+                    params.classList.add('active');
+                }
+            });
+
+            return card;
+        }
+
+        function generateToolParams(tool) {
+            // Generate form fields based on tool schema
+            // This is simplified - in real implementation, you'd use the actual schema
+            const commonParams = {
+                git_status: [],
+                git_log: [{ name: 'count', type: 'number', default: 10, description: 'Number of commits' }],
+                list_files: [{ name: 'directory', type: 'text', default: '.', description: 'Directory to list' }],
+                system_info: [],
+                read_file: [{ name: 'filepath', type: 'text', required: true, description: 'File path to read' }],
+                search_files: [
+                    { name: 'query', type: 'text', required: true, description: 'Search query' },
+                    { name: 'searchDir', type: 'text', default: '.', description: 'Search directory' }
+                ]
+            };
+
+            const params = commonParams[tool.name] || [];
+            return params.map(param => `
+                <div class="param-group">
+                    <label class="param-label">${param.description || param.name}</label>
+                    <input type="${param.type}" 
+                           class="param-input" 
+                           name="${param.name}" 
+                           ${param.required ? 'required' : ''}
+                           ${param.default ? `value="${param.default}"` : ''}
+                           placeholder="${param.description || param.name}">
+                </div>
+            `).join('');
+        }
+
+        async function executeTool(toolName) {
+            playBeep(1000, 150);
+            const server = servers.get(activeServerId);
+            if (!server) return;
+
+            // Collect parameters
+            const paramsContainer = document.getElementById(`params-${toolName}`);
+            const inputs = paramsContainer.querySelectorAll('.param-input');
+            const args = {};
+            
+            inputs.forEach(input => {
+                if (input.value) {
+                    args[input.name] = input.type === 'number' ? Number(input.value) : input.value;
+                }
+            });
+
+            const runId = ++messageId;
+            addMessage('info', 'Tool Execution', `Executing ${toolName} with args: ${JSON.stringify(args)}`);
+            
+            try {
+                let result;
+                if (server.transport === 'http') {
+                    const response = await fetch(`${server.url}/api/tools/execute`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ tool: toolName, args })
+                    });
+                    result = await response.json();
+                } else {
+                    // Mock stdio execution
+                    result = await mockStdioExecution(toolName, args);
+                }
+
+                // Display results in inspector
+                displayInInspector(result);
+                
+                // Add to messages
+                const status = result.success ? 'success' : 'error';
+                addMessage(status, 'Tool Result', result.success ? 'Tool executed successfully' : result.error);
+                
+                // Add to run data
+                runData.push({
+                    id: runId,
+                    tool: toolName,
+                    args,
+                    result,
+                    timestamp: new Date().toISOString(),
+                    server: server.name
+                });
+
+            } catch (error) {
+                addMessage('error', 'Tool Execution Failed', error.message);
+                displayInInspector({ error: error.message, success: false });
+            }
+        }
+
+        async function mockStdioExecution(toolName, args) {
+            // Simulate network delay
+            await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500));
+            
+            const mockResponses = {
+                git_status: { success: true, output: 'Working directory clean' },
+                list_files: { success: true, output: JSON.stringify([
+                    { name: 'server.js', type: 'file' },
+                    { name: 'package.json', type: 'file' }
+                ], null, 2) },
+                system_info: { success: true, output: JSON.stringify({
+                    platform: 'mock-os',
+                    cpus: 8,
+                    memory: { total: 16, free: 8 }
+                }, null, 2) }
+            };
+            
+            return mockResponses[toolName] || { success: false, error: 'Tool not implemented in mock' };
+        }
+
+        // JSON Inspector
+        function displayInInspector(data) {
+            const inspector = document.getElementById('json-inspector');
+            inspector.innerHTML = syntaxHighlight(JSON.stringify(data, null, 2));
+        }
+
+        function syntaxHighlight(json) {
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                let cls = 'json-number';
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        cls = 'json-key';
+                    } else {
+                        cls = 'json-string';
+                    }
+                } else if (/true|false/.test(match)) {
+                    cls = 'json-boolean';
+                } else if (/null/.test(match)) {
+                    cls = 'json-null';
+                }
+                return '<span class="' + cls + '">' + match + '</span>';
+            });
+        }
+
+        function clearInspector() {
+            playBeep(400, 100);
+            document.getElementById('json-inspector').innerHTML = `
+                <div style="text-align: center; color: var(--text-secondary); padding: 20px;">
+                    <i class="fas fa-eye" style="font-size: 2rem; margin-bottom: 15px;"></i>
+                    <p>Execute a tool to inspect JSON responses</p>
+                </div>
+            `;
+        }
+
+        // Messages Feed
+        function addMessage(type, title, content) {
+            const container = document.getElementById('messages-content');
+            const message = document.createElement('div');
+            message.className = `message-item ${type}`;
+            message.innerHTML = `
+                <div class="message-header">
+                    <span class="message-type">${title.toUpperCase()}</span>
+                    <span class="message-time">${new Date().toLocaleTimeString()}</span>
+                </div>
+                <div class="message-content">${content}</div>
+            `;
+            container.insertBefore(message, container.firstChild);
+            
+            // Limit messages
+            while (container.children.length > 100) {
+                container.removeChild(container.lastChild);
+            }
+        }
+
+        function clearMessagesFeed() {
+            playBeep(400, 100);
+            document.getElementById('messages-content').innerHTML = '';
+            addMessage('info', 'System', 'Message feed cleared');
+        }
+
+        function exportRunsData() {
+            playBeep(1200, 200);
+            const dataStr = JSON.stringify(runData, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `mcp-runs-${new Date().toISOString().split('T')[0]}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+            
+            addMessage('success', 'Export Complete', `Exported ${runData.length} runs to ${exportFileDefaultName}`);
+        }
+
+        // Modal Management
+        function showAddServerModal() {
+            playBeep(800, 120);
+            document.getElementById('add-server-modal').classList.add('active');
+        }
+
+        function hideAddServerModal() {
+            playBeep(600, 80);
+            document.getElementById('add-server-modal').classList.remove('active');
+            document.getElementById('add-server-form').reset();
+        }
+
+        function updateTransportFields(transport) {
+            const stdioFields = document.getElementById('stdio-fields');
+            const httpFields = document.getElementById('http-fields');
+            
+            if (transport === 'stdio') {
+                stdioFields.style.display = 'block';
+                httpFields.style.display = 'none';
+            } else {
+                stdioFields.style.display = 'none';
+                httpFields.style.display = 'block';
+            }
+        }
+
+        function addServer(event) {
+            event.preventDefault();
+            playBeep(1000, 150);
+            
+            const formData = new FormData(event.target);
+            const server = {
+                id: 'server-' + Date.now(),
+                name: formData.get('name'),
+                transport: formData.get('transport'),
+                description: formData.get('description'),
+                status: 'offline',
+                tools: []
+            };
+            
+            if (server.transport === 'http') {
+                server.url = formData.get('url');
+            } else {
+                server.command = formData.get('command');
+            }
+            
+            servers.set(server.id, server);
+            renderServers();
+            hideAddServerModal();
+            
+            addMessage('success', 'Server Added', `Added new server: ${server.name}`);
+            return false;
+        }
+
+        function removeServer(serverId) {
+            if (confirm('Are you sure you want to remove this server?')) {
+                playBeep(400, 200);
+                const server = servers.get(serverId);
+                servers.delete(serverId);
+                
+                if (activeServerId === serverId) {
+                    activeServerId = null;
+                    document.getElementById('active-server-name').textContent = 'Select Server';
+                    document.getElementById('tools-container').innerHTML = `
+                        <div class="tool-card" style="text-align: center; color: var(--text-secondary); padding: 40px;">
+                            <i class="fas fa-arrow-left" style="font-size: 2rem; margin-bottom: 15px;"></i>
+                            <p>Select a server to view available tools</p>
+                        </div>
+                    `;
+                }
+                
+                renderServers();
+                addMessage('info', 'Server Removed', `Removed server: ${server.name}`);
+            }
+        }
+
+        // Configuration Generator
+        function showConfigModal(serverId) {
+            playBeep(800, 120);
+            const modal = document.getElementById('config-modal');
+            modal.setAttribute('data-server-id', serverId);
+            modal.classList.add('active');
+            generateConfig();
+        }
+
+        function hideConfigModal() {
+            playBeep(600, 80);
+            document.getElementById('config-modal').classList.remove('active');
+        }
+
+        function generateConfig() {
+            const modal = document.getElementById('config-modal');
+            const serverId = modal.getAttribute('data-server-id');
+            const server = servers.get(serverId);
+            const format = document.getElementById('config-format').value;
+            
+            let config = {};
+            
+            switch (format) {
+                case 'claude-desktop':
+                    config = {
+                        mcpServers: {
+                            [server.name.toLowerCase().replace(/\s+/g, '-')]: {
+                                command: server.transport === 'stdio' ? server.command : undefined,
+                                transport: server.transport === 'http' ? {
+                                    type: 'http',
+                                    url: server.url
+                                } : undefined
+                            }
+                        }
+                    };
+                    break;
+                    
+                case 'vscode':
+                    config = {
+                        'mcp.servers': [
+                            {
+                                name: server.name,
+                                transport: server.transport,
+                                command: server.transport === 'stdio' ? server.command : undefined,
+                                url: server.transport === 'http' ? server.url : undefined
+                            }
+                        ]
+                    };
+                    break;
+                    
+                case 'custom':
+                default:
+                    config = {
+                        server: {
+                            name: server.name,
+                            transport: server.transport,
+                            endpoint: server.transport === 'http' ? server.url : server.command,
+                            description: server.description
+                        }
+                    };
+            }
+            
+            document.getElementById('config-output').innerHTML = syntaxHighlight(JSON.stringify(config, null, 2));
+        }
+
+        function copyConfig() {
+            const configText = document.getElementById('config-output').textContent;
+            navigator.clipboard.writeText(configText).then(() => {
+                playBeep(1200, 100);
+                addMessage('success', 'Config Copied', 'Configuration copied to clipboard');
+            });
+        }
+
+        function downloadConfig() {
+            const configText = document.getElementById('config-output').textContent;
+            const format = document.getElementById('config-format').value;
+            const filename = `mcp-config-${format}-${new Date().toISOString().split('T')[0]}.json`;
+            
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(configText);
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', filename);
+            linkElement.click();
+            
+            playBeep(1200, 200);
+            addMessage('success', 'Config Downloaded', `Configuration saved as ${filename}`);
+        }
+
+        // Policy Settings
+        function showPolicyModal() {
+            playBeep(800, 120);
+            document.getElementById('policy-modal').classList.add('active');
+        }
+
+        function hidePolicyModal() {
+            playBeep(600, 80);
+            document.getElementById('policy-modal').classList.remove('active');
+        }
+
+        function savePolicySettings() {
+            playBeep(1000, 150);
+            const settings = {
+                requireAuth: document.getElementById('policy-require-auth').checked,
+                rateLimit: document.getElementById('policy-rate-limit').checked,
+                logRequests: document.getElementById('policy-log-requests').checked,
+                sandboxMode: document.getElementById('policy-sandbox-mode').checked
+            };
+            
+            // Save to localStorage
+            localStorage.setItem('mcp-policy-settings', JSON.stringify(settings));
+            
+            hidePolicyModal();
+            addMessage('success', 'Policy Updated', 'Policy settings have been saved');
+        }
+
+        // Utility Functions
+        function filterTools(searchTerm) {
+            const toolCards = document.querySelectorAll('#tools-container .tool-card');
+            toolCards.forEach(card => {
+                const name = card.querySelector('.tool-name')?.textContent.toLowerCase() || '';
+                const desc = card.querySelector('.tool-description')?.textContent.toLowerCase() || '';
+                const matches = name.includes(searchTerm.toLowerCase()) || desc.includes(searchTerm.toLowerCase());
+                card.style.display = matches ? 'block' : 'none';
+            });
+        }
+
+        function sendPromptToConversation(prompt) {
+            playBeep(900, 120);
+            addMessage('info', 'Prompt Sent', `Sent prompt: "${prompt}"`);
+            
+            // In a real implementation, this would send the prompt to the active conversation
+            // For now, we'll just simulate it
+            setTimeout(() => {
+                addMessage('success', 'Prompt Delivered', 'Prompt has been added to conversation');
+            }, 500);
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch (e.key) {
+                    case 'n':
+                        e.preventDefault();
+                        showAddServerModal();
+                        break;
+                    case 'p':
+                        e.preventDefault();
+                        showPolicyModal();
+                        break;
+                    case 'k':
+                        e.preventDefault();
+                        clearMessagesFeed();
+                        break;
+                }
+            }
+        });
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeServers();
+            
+            // Load saved policy settings
+            const savedSettings = localStorage.getItem('mcp-policy-settings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                document.getElementById('policy-require-auth').checked = settings.requireAuth;
+                document.getElementById('policy-rate-limit').checked = settings.rateLimit;
+                document.getElementById('policy-log-requests').checked = settings.logRequests;
+                document.getElementById('policy-sandbox-mode').checked = settings.sandboxMode;
+            }
+            
+            addMessage('success', 'Console Ready', 'MCP Integration Console initialized successfully');
+        });
+    </script>

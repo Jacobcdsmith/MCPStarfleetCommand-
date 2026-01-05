@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Start MCP Server" type="NodeJSConfigurationType" application-parameters="" path-to-js-file="$PROJECT_DIR$/server.js" working-dir="$PROJECT_DIR$">
+    <envs>
+      <env name="DEBUG" value="1" />
+      <env name="NODE_ENV" value="development" />
+    </envs>
+    <EXTENSION ID="com.jetbrains.nodejs.run.NodeJSStartBrowserRunConfigurationExtension">
+      <browser start="true" url="http://localhost:3001" with-js-debugger="false" />
+    </EXTENSION>
+    <method v="2" />
+  </configuration>
+</component>

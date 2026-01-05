@@ -1,0 +1,3717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STARFLEET - Enhanced MCP Server Command Interface</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* LCARS Color Palette */
+            --lcars-blue: #5555ff;
+            --lcars-orange: #ff9900;
+            --lcars-red: #cc6666;
+            --lcars-purple: #cc99cc;
+            --lcars-yellow: #ffff99;
+            --lcars-green: #99cc99;
+            --lcars-light-blue: #99ccff;
+            --lcars-dark-blue: #000080;
+            --lcars-black: #000000;
+            --lcars-gray: #333366;
+            --lcars-white: #ffffff;
+            
+            /* Enterprise Accent Colors */
+            --enterprise-gold: #ffd700;
+            --enterprise-silver: #c0c0c0;
+            --warp-core-blue: #00d4ff;
+            --alert-red: #ff0000;
+            --console-green: #00ff41;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Rajdhani', 'Orbitron', monospace;
+            background: radial-gradient(ellipse at center, #001122 0%, #000000 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: var(--lcars-light-blue);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Starfield Background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(2px 2px at 20px 30px, #eee, transparent),
+                radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.8), transparent),
+                radial-gradient(1px 1px at 90px 40px, #fff, transparent),
+                radial-gradient(1px 1px at 130px 80px, rgba(255,255,255,0.6), transparent),
+                radial-gradient(2px 2px at 160px 30px, #ddd, transparent);
+            background-repeat: repeat;
+            background-size: 200px 100px;
+            animation: starfield 200s linear infinite;
+            opacity: 0.3;
+            z-index: -1;
+        }
+
+        @keyframes starfield {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-100px); }
+        }
+
+        /* LCARS Interface Framework */
+        .lcars-container {
+            width: 100%;
+            min-height: 100vh;
+            position: relative;
+            padding: 20px;
+        }
+
+        /* LCARS Header */
+        .lcars-header {
+            background: linear-gradient(45deg, var(--lcars-dark-blue) 0%, var(--lcars-blue) 100%);
+            border: 2px solid var(--lcars-orange);
+            border-radius: 20px 0 0 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .lcars-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 60px;
+            height: 100%;
+            background: var(--lcars-orange);
+            border-radius: 0 18px 18px 0;
+        }
+
+        .lcars-header::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            width: 40px;
+            height: 6px;
+            background: var(--lcars-dark-blue);
+            border-radius: 3px;
+            box-shadow: 
+                0 -15px 0 var(--lcars-dark-blue),
+                0 15px 0 var(--lcars-dark-blue),
+                0 -30px 0 var(--lcars-dark-blue),
+                0 30px 0 var(--lcars-dark-blue);
+        }
+
+        .enterprise-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 3rem;
+            font-weight: 900;
+            color: var(--enterprise-gold);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+            text-shadow: 
+                0 0 10px var(--enterprise-gold),
+                0 0 20px var(--enterprise-gold),
+                0 0 30px var(--enterprise-gold);
+            animation: titlePulse 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes titlePulse {
+            0% { text-shadow: 0 0 10px var(--enterprise-gold), 0 0 20px var(--enterprise-gold), 0 0 30px var(--enterprise-gold); }
+            100% { text-shadow: 0 0 20px var(--enterprise-gold), 0 0 30px var(--enterprise-gold), 0 0 40px var(--enterprise-gold); }
+        }
+
+        .enterprise-subtitle {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--lcars-light-blue);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+        }
+
+        .starfleet-status {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            position: relative;
+        }
+
+        .warp-core-indicator {
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle, var(--warp-core-blue) 0%, var(--lcars-blue) 100%);
+            border-radius: 50%;
+            box-shadow: 
+                0 0 20px var(--warp-core-blue),
+                inset 0 0 10px rgba(255,255,255,0.3);
+            animation: warpCorePulse 2s ease-in-out infinite alternate;
+            position: relative;
+        }
+
+        .warp-core-indicator::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 8px;
+            background: var(--lcars-white);
+            border-radius: 50%;
+            animation: warpCorePulse 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes warpCorePulse {
+            0% { 
+                box-shadow: 0 0 20px var(--warp-core-blue), inset 0 0 10px rgba(255,255,255,0.3);
+                transform: scale(1);
+            }
+            100% { 
+                box-shadow: 0 0 40px var(--warp-core-blue), 0 0 60px var(--warp-core-blue), inset 0 0 15px rgba(255,255,255,0.5);
+                transform: scale(1.1);
+            }
+        }
+
+        .status-text {
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--console-green);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stardate {
+            margin-left: auto;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.9rem;
+            color: var(--enterprise-silver);
+            opacity: 0.8;
+        }
+
+        /* LCARS Panel Grid */
+        .lcars-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .lcars-panel {
+            background: linear-gradient(135deg, var(--lcars-gray) 0%, rgba(0,0,50,0.9) 100%);
+            border: 3px solid var(--lcars-orange);
+            border-radius: 25px 0 25px 0;
+            padding: 0;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .lcars-panel:hover {
+            transform: translateY(-8px);
+            box-shadow: 
+                0 20px 40px rgba(0,0,0,0.3),
+                0 0 50px var(--lcars-orange);
+            border-color: var(--enterprise-gold);
+        }
+
+        .lcars-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: linear-gradient(90deg, 
+                var(--lcars-orange) 0%, 
+                var(--lcars-red) 25%, 
+                var(--lcars-yellow) 50%, 
+                var(--lcars-blue) 75%, 
+                var(--lcars-orange) 100%);
+            animation: lcarsStrip 3s linear infinite;
+        }
+
+        @keyframes lcarsStrip {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 200% 0%; }
+        }
+
+        .lcars-panel::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 80px;
+            height: 100%;
+            background: var(--lcars-orange);
+            border-radius: 0 22px 22px 0;
+            opacity: 0.8;
+        }
+
+        .lcars-panel-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 25px 30px 20px 30px;
+            margin-bottom: 0;
+            border-bottom: 3px solid var(--lcars-blue);
+            position: relative;
+            z-index: 2;
+        }
+
+        .lcars-icon {
+            width: 32px;
+            height: 32px;
+            fill: var(--enterprise-gold);
+            filter: drop-shadow(0 0 10px var(--enterprise-gold));
+            animation: iconGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes iconGlow {
+            0% { filter: drop-shadow(0 0 10px var(--enterprise-gold)); }
+            100% { filter: drop-shadow(0 0 20px var(--enterprise-gold)) drop-shadow(0 0 30px var(--enterprise-gold)); }
+        }
+
+        .lcars-panel h2 {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--lcars-light-blue);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin: 0;
+            text-shadow: 0 0 10px var(--lcars-light-blue);
+        }
+
+        .panel-content {
+            padding: 30px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .lcars-tool-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .lcars-button {
+            background: linear-gradient(45deg, var(--lcars-blue) 0%, var(--lcars-dark-blue) 100%);
+            border: 2px solid var(--lcars-orange);
+            border-radius: 20px 0 20px 0;
+            padding: 18px 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .lcars-button::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 8px;
+            background: var(--lcars-orange);
+            transition: width 0.3s ease;
+        }
+
+        .lcars-button:hover {
+            background: linear-gradient(45deg, var(--lcars-light-blue) 0%, var(--lcars-blue) 100%);
+            border-color: var(--enterprise-gold);
+            transform: translateX(10px);
+            box-shadow: 0 0 30px var(--lcars-orange);
+        }
+
+        .lcars-button:hover::before {
+            width: 15px;
+            background: var(--enterprise-gold);
+        }
+
+        .lcars-button:active {
+            transform: translateX(10px) scale(0.98);
+            box-shadow: 0 0 50px var(--enterprise-gold), inset 0 0 20px rgba(255,255,255,0.2);
+        }
+
+        .tool-name {
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--lcars-white);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px var(--lcars-light-blue);
+        }
+
+        .tool-description {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.95rem;
+            color: var(--lcars-light-blue);
+            opacity: 0.9;
+            letter-spacing: 0.5px;
+        }
+
+        .lcars-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 20px;
+        }
+
+        .lcars-stat-pod {
+            background: linear-gradient(45deg, var(--lcars-dark-blue) 0%, var(--lcars-gray) 100%);
+            border: 2px solid var(--lcars-blue);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .lcars-stat-pod::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--lcars-blue);
+            animation: statPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes statPulse {
+            0%, 100% { background: var(--lcars-blue); }
+            50% { background: var(--enterprise-gold); }
+        }
+
+        .lcars-stat-pod:hover {
+            border-color: var(--enterprise-gold);
+            box-shadow: 0 0 25px var(--lcars-blue);
+            transform: translateY(-5px);
+        }
+
+        .stat-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: var(--enterprise-gold);
+            margin-bottom: 8px;
+            text-shadow: 0 0 15px var(--enterprise-gold);
+            animation: valueGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes valueGlow {
+            0% { text-shadow: 0 0 15px var(--enterprise-gold); }
+            100% { text-shadow: 0 0 25px var(--enterprise-gold), 0 0 35px var(--enterprise-gold); }
+        }
+
+        .stat-label {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--lcars-light-blue);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .lcars-terminal-container {
+            grid-column: 1 / -1;
+        }
+
+        .lcars-terminal {
+            background: linear-gradient(135deg, var(--lcars-black) 0%, #001122 100%);
+            border: 3px solid var(--lcars-red);
+            border-radius: 25px 0 25px 0;
+            padding: 0;
+            font-family: 'Orbitron', 'Rajdhani', monospace;
+            color: var(--console-green);
+            max-height: 500px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .lcars-terminal::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 60px;
+            height: 100%;
+            background: var(--lcars-red);
+            border-radius: 0 22px 22px 0;
+            opacity: 0.8;
+        }
+
+        .terminal-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 20px 30px;
+            background: linear-gradient(90deg, var(--lcars-dark-blue) 0%, transparent 100%);
+            border-bottom: 2px solid var(--lcars-red);
+            position: relative;
+            z-index: 2;
+        }
+
+        .enterprise-logo {
+            display: flex;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .status-indicator.operational {
+            background: var(--console-green);
+            border-color: var(--console-green);
+            box-shadow: 0 0 20px var(--console-green);
+            animation: operationalPulse 2s ease-in-out infinite;
+        }
+
+        .status-indicator.standby {
+            background: var(--lcars-yellow);
+            border-color: var(--lcars-yellow);
+            box-shadow: 0 0 15px var(--lcars-yellow);
+        }
+
+        .status-indicator.alert {
+            background: var(--alert-red);
+            border-color: var(--alert-red);
+            box-shadow: 0 0 25px var(--alert-red);
+            animation: alertFlash 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes operationalPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+
+        @keyframes alertFlash {
+            0% { opacity: 1; }
+            100% { opacity: 0.3; }
+        }
+
+        .terminal-title {
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--enterprise-gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-left: auto;
+            margin-right: 80px;
+        }
+
+        .terminal-content {
+            padding: 25px 30px;
+            max-height: 350px;
+            overflow-y: auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        .terminal-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .terminal-content::-webkit-scrollbar-track {
+            background: var(--lcars-gray);
+        }
+
+        .terminal-content::-webkit-scrollbar-thumb {
+            background: var(--lcars-orange);
+            border-radius: 4px;
+        }
+
+        .terminal-line {
+            margin-bottom: 12px;
+            line-height: 1.6;
+            font-family: 'Rajdhani', monospace;
+        }
+
+        .terminal-prompt {
+            color: var(--enterprise-gold);
+            font-weight: 700;
+            text-shadow: 0 0 10px var(--enterprise-gold);
+        }
+
+        .terminal-command {
+            color: var(--warp-core-blue);
+            font-weight: 600;
+            text-shadow: 0 0 8px var(--warp-core-blue);
+        }
+
+        .terminal-output {
+            color: var(--console-green);
+            opacity: 0.9;
+            font-family: 'Rajdhani', monospace;
+            text-shadow: 0 0 5px var(--console-green);
+        }
+
+        .terminal-output.error {
+            color: var(--alert-red);
+            text-shadow: 0 0 10px var(--alert-red);
+            animation: errorFlash 0.5s ease-in-out 3;
+        }
+
+        @keyframes errorFlash {
+            0%, 100% { opacity: 0.9; }
+            50% { opacity: 0.5; }
+        }
+
+        /* LCARS Control Panel */
+        .lcars-control-panel {
+            background: linear-gradient(135deg, var(--lcars-gray) 0%, rgba(0,0,50,0.95) 100%);
+            border: 3px solid var(--lcars-purple);
+            border-radius: 25px 0 25px 0;
+            padding: 25px 35px;
+            margin-top: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .lcars-control-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background: linear-gradient(90deg, 
+                var(--lcars-purple) 0%, 
+                var(--lcars-blue) 25%, 
+                var(--lcars-orange) 50%, 
+                var(--lcars-red) 75%, 
+                var(--lcars-purple) 100%);
+            animation: controlPanelStrip 4s linear infinite;
+        }
+
+        @keyframes controlPanelStrip {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 300% 0%; }
+        }
+
+        .lcars-control-panel::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 70px;
+            height: 100%;
+            background: var(--lcars-purple);
+            border-radius: 0 22px 22px 0;
+            opacity: 0.7;
+        }
+
+        .control-grid {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 2;
+        }
+
+        .lcars-control-btn {
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            padding: 15px 30px;
+            border: 2px solid;
+            border-radius: 20px 0 20px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .lcars-control-btn::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 0;
+            transition: width 0.3s ease;
+            z-index: 1;
+        }
+
+        .lcars-control-btn span {
+            position: relative;
+            z-index: 2;
+        }
+
+        .btn-primary {
+            background: var(--lcars-blue);
+            border-color: var(--lcars-blue);
+            color: var(--lcars-white);
+            text-shadow: 0 0 8px var(--lcars-light-blue);
+        }
+
+        .btn-primary::before {
+            background: var(--enterprise-gold);
+        }
+
+        .btn-primary:hover {
+            border-color: var(--enterprise-gold);
+            box-shadow: 0 0 30px var(--enterprise-gold);
+            transform: translateY(-3px) scale(1.05);
+        }
+
+        .btn-primary:hover::before {
+            width: 100%;
+        }
+
+        .btn-secondary {
+            background: var(--lcars-gray);
+            border-color: var(--lcars-purple);
+            color: var(--lcars-light-blue);
+            text-shadow: 0 0 8px var(--lcars-purple);
+        }
+
+        .btn-secondary::before {
+            background: var(--lcars-purple);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--lcars-light-blue);
+            box-shadow: 0 0 25px var(--lcars-purple);
+            transform: translateY(-3px) scale(1.05);
+        }
+
+        .btn-secondary:hover::before {
+            width: 100%;
+        }
+
+        .btn-success {
+            background: var(--lcars-green);
+            border-color: var(--console-green);
+            color: var(--lcars-white);
+            text-shadow: 0 0 8px var(--console-green);
+        }
+
+        .btn-success::before {
+            background: var(--warp-core-blue);
+        }
+
+        .btn-success:hover {
+            border-color: var(--warp-core-blue);
+            box-shadow: 0 0 30px var(--console-green);
+            transform: translateY(-3px) scale(1.05);
+        }
+
+        .btn-success:hover::before {
+            width: 100%;
+        }
+
+        .lcars-loading {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding: 30px;
+            text-align: center;
+            color: var(--lcars-light-blue);
+        }
+
+        .warp-spinner {
+            width: 30px;
+            height: 30px;
+            border: 3px solid transparent;
+            border-top: 3px solid var(--warp-core-blue);
+            border-right: 3px solid var(--enterprise-gold);
+            border-radius: 50%;
+            animation: warpSpin 1s linear infinite;
+            box-shadow: 0 0 20px var(--warp-core-blue);
+        }
+
+        @keyframes warpSpin {
+            0% { 
+                transform: rotate(0deg);
+                box-shadow: 0 0 20px var(--warp-core-blue);
+            }
+            50% {
+                box-shadow: 0 0 40px var(--enterprise-gold);
+            }
+            100% { 
+                transform: rotate(360deg);
+                box-shadow: 0 0 20px var(--warp-core-blue);
+            }
+        }
+
+        /* ============================================
+           REAL-TIME ANALYTICS VISUALIZATIONS
+           ============================================ */
+        
+        .analytics-full-width {
+            grid-column: 1 / -1;
+        }
+
+        .analytics-dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .analytics-card {
+            background: linear-gradient(135deg, rgba(0,100,150,0.3) 0%, rgba(0,50,100,0.5) 100%);
+            border: 2px solid var(--warp-core-blue);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .analytics-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--warp-core-blue), var(--enterprise-gold), var(--warp-core-blue));
+            animation: cardPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes cardPulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .analytics-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,212,255,0.3);
+            border-color: var(--enterprise-gold);
+        }
+
+        .analytics-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .analytics-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 2rem;
+            font-weight: 900;
+            color: var(--enterprise-gold);
+            text-shadow: 0 0 15px var(--enterprise-gold);
+            margin-bottom: 5px;
+        }
+
+        .analytics-label {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.85rem;
+            color: var(--lcars-light-blue);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .analytics-trend {
+            font-size: 0.8rem;
+            margin-top: 8px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            display: inline-block;
+        }
+
+        .trend-up {
+            background: rgba(0,255,65,0.2);
+            color: var(--console-green);
+        }
+
+        .trend-down {
+            background: rgba(255,0,0,0.2);
+            color: var(--alert-red);
+        }
+
+        .trend-stable {
+            background: rgba(255,215,0,0.2);
+            color: var(--enterprise-gold);
+        }
+
+        /* Live Chart Container */
+        .chart-container {
+            background: rgba(0,0,30,0.6);
+            border: 2px solid var(--lcars-blue);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .chart-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 1rem;
+            color: var(--enterprise-gold);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-title .live-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--alert-red);
+            border-radius: 50%;
+            animation: livePulse 1s ease-in-out infinite;
+        }
+
+        @keyframes livePulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.3); }
+        }
+
+        /* SVG Chart Styles */
+        .svg-chart {
+            width: 100%;
+            height: 150px;
+            overflow: visible;
+        }
+
+        .chart-line {
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .chart-line-cpu {
+            stroke: var(--alert-red);
+            filter: drop-shadow(0 0 5px var(--alert-red));
+        }
+
+        .chart-line-memory {
+            stroke: var(--console-green);
+            filter: drop-shadow(0 0 5px var(--console-green));
+        }
+
+        .chart-line-requests {
+            stroke: var(--warp-core-blue);
+            filter: drop-shadow(0 0 5px var(--warp-core-blue));
+        }
+
+        .chart-area {
+            opacity: 0.2;
+        }
+
+        .chart-area-cpu {
+            fill: var(--alert-red);
+        }
+
+        .chart-area-memory {
+            fill: var(--console-green);
+        }
+
+        .chart-grid-line {
+            stroke: var(--lcars-gray);
+            stroke-width: 1;
+            stroke-dasharray: 5,5;
+            opacity: 0.3;
+        }
+
+        .chart-axis-label {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 10px;
+            fill: var(--lcars-light-blue);
+        }
+
+        /* Progress Bars */
+        .progress-container {
+            margin-bottom: 15px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.9rem;
+            color: var(--lcars-light-blue);
+        }
+
+        .progress-bar {
+            height: 12px;
+            background: rgba(0,0,50,0.8);
+            border: 1px solid var(--lcars-blue);
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 0.5s ease;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .progress-cpu { background: linear-gradient(90deg, var(--lcars-orange), var(--alert-red)); }
+        .progress-memory { background: linear-gradient(90deg, var(--lcars-blue), var(--console-green)); }
+        .progress-disk { background: linear-gradient(90deg, var(--lcars-purple), var(--warp-core-blue)); }
+
+        /* Activity Feed */
+        .activity-feed {
+            max-height: 200px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .activity-feed::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .activity-feed::-webkit-scrollbar-track {
+            background: rgba(0,0,50,0.5);
+        }
+
+        .activity-feed::-webkit-scrollbar-thumb {
+            background: var(--lcars-orange);
+            border-radius: 3px;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: rgba(0,50,100,0.3);
+            border-left: 3px solid var(--warp-core-blue);
+            border-radius: 0 8px 8px 0;
+            animation: fadeInSlide 0.3s ease;
+        }
+
+        @keyframes fadeInSlide {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .activity-item.success { border-left-color: var(--console-green); }
+        .activity-item.error { border-left-color: var(--alert-red); }
+        .activity-item.warning { border-left-color: var(--lcars-yellow); }
+
+        .activity-icon {
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .activity-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .activity-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--lcars-white);
+            margin-bottom: 2px;
+        }
+
+        .activity-time {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.75rem;
+            color: var(--lcars-light-blue);
+            opacity: 0.7;
+        }
+
+        /* Gauge Meters */
+        .gauge-container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .gauge {
+            text-align: center;
+            position: relative;
+        }
+
+        .gauge-svg {
+            width: 100px;
+            height: 100px;
+            transform: rotate(-90deg);
+        }
+
+        .gauge-bg {
+            fill: none;
+            stroke: rgba(0,50,100,0.5);
+            stroke-width: 8;
+        }
+
+        .gauge-fill {
+            fill: none;
+            stroke-width: 8;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.5s ease;
+        }
+
+        .gauge-fill-cpu { stroke: var(--alert-red); filter: drop-shadow(0 0 5px var(--alert-red)); }
+        .gauge-fill-memory { stroke: var(--console-green); filter: drop-shadow(0 0 5px var(--console-green)); }
+        .gauge-fill-disk { stroke: var(--warp-core-blue); filter: drop-shadow(0 0 5px var(--warp-core-blue)); }
+        .gauge-fill-network { stroke: var(--enterprise-gold); filter: drop-shadow(0 0 5px var(--enterprise-gold)); }
+
+        .gauge-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Orbitron', monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--lcars-white);
+        }
+
+        .gauge-label {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.8rem;
+            color: var(--lcars-light-blue);
+            margin-top: 8px;
+            text-transform: uppercase;
+        }
+
+        /* Heat Map Grid */
+        .heatmap-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 3px;
+            margin-bottom: 15px;
+        }
+
+        .heatmap-cell {
+            aspect-ratio: 1;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .heatmap-cell:hover {
+            transform: scale(1.2);
+            z-index: 10;
+        }
+
+        .heat-0 { background: rgba(0,50,100,0.3); }
+        .heat-1 { background: rgba(0,150,100,0.5); }
+        .heat-2 { background: rgba(0,200,100,0.6); }
+        .heat-3 { background: rgba(100,200,0,0.7); }
+        .heat-4 { background: rgba(200,200,0,0.8); }
+        .heat-5 { background: rgba(255,150,0,0.9); }
+        .heat-6 { background: rgba(255,100,0,1); }
+        .heat-7 { background: rgba(255,50,0,1); }
+        .heat-8 { background: rgba(255,0,0,1); box-shadow: 0 0 10px var(--alert-red); }
+
+        /* Service Status Grid */
+        .service-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .service-status {
+            background: rgba(0,30,60,0.6);
+            border: 2px solid var(--lcars-blue);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .service-status.online {
+            border-color: var(--console-green);
+            box-shadow: 0 0 15px rgba(0,255,65,0.3);
+        }
+
+        .service-status.offline {
+            border-color: var(--alert-red);
+            box-shadow: 0 0 15px rgba(255,0,0,0.3);
+        }
+
+        .service-status.degraded {
+            border-color: var(--lcars-yellow);
+            box-shadow: 0 0 15px rgba(255,255,0,0.3);
+        }
+
+        .service-name {
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--lcars-white);
+            margin-bottom: 8px;
+        }
+
+        .service-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin: 0 auto 8px;
+        }
+
+        .service-indicator.online { background: var(--console-green); animation: pulse 2s infinite; }
+        .service-indicator.offline { background: var(--alert-red); }
+        .service-indicator.degraded { background: var(--lcars-yellow); animation: pulse 1s infinite; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .service-latency {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.75rem;
+            color: var(--lcars-light-blue);
+        }
+
+        /* Sparkline Charts */
+        .sparkline-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px;
+            background: rgba(0,30,60,0.4);
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .sparkline-label {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.9rem;
+            color: var(--lcars-light-blue);
+            min-width: 100px;
+        }
+
+        .sparkline {
+            flex: 1;
+            height: 30px;
+        }
+
+        .sparkline-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.9rem;
+            color: var(--enterprise-gold);
+            min-width: 60px;
+            text-align: right;
+        }
+
+        /* Metric Tiles */
+        .metric-tiles {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+        }
+
+        .metric-tile {
+            background: linear-gradient(135deg, rgba(0,80,120,0.4) 0%, rgba(0,40,80,0.6) 100%);
+            border: 1px solid var(--lcars-blue);
+            border-radius: 10px;
+            padding: 15px 10px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .metric-tile:hover {
+            border-color: var(--enterprise-gold);
+            transform: scale(1.05);
+        }
+
+        .metric-tile-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--enterprise-gold);
+            margin-bottom: 5px;
+        }
+
+        .metric-tile-label {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.7rem;
+            color: var(--lcars-light-blue);
+            text-transform: uppercase;
+        }
+
+        /* Analytics Controls */
+        .analytics-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .analytics-btn {
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+            font-size: 0.85rem;
+            padding: 8px 16px;
+            background: rgba(0,50,100,0.5);
+            border: 1px solid var(--lcars-blue);
+            border-radius: 20px;
+            color: var(--lcars-light-blue);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .analytics-btn:hover {
+            background: var(--lcars-blue);
+            color: var(--lcars-white);
+        }
+
+        .analytics-btn.active {
+            background: var(--enterprise-gold);
+            border-color: var(--enterprise-gold);
+            color: var(--lcars-black);
+        }
+
+        .starfleet-footer {
+            text-align: center;
+            padding: 40px 20px;
+            margin-top: 50px;
+            background: linear-gradient(90deg, transparent 0%, rgba(0,0,50,0.3) 50%, transparent 100%);
+            border-top: 1px solid var(--lcars-blue);
+        }
+
+        .footer-text {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.9rem;
+            color: var(--enterprise-silver);
+            opacity: 0.7;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .federation-emblem {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 15px;
+            background: radial-gradient(circle, var(--enterprise-gold) 0%, var(--lcars-orange) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: emblemRotate 10s linear infinite;
+        }
+
+        @keyframes emblemRotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .lcars-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .lcars-container {
+                padding: 15px;
+            }
+            
+            .lcars-grid {
+                gap: 25px;
+            }
+            
+            .enterprise-title {
+                font-size: 2.2rem;
+                letter-spacing: 2px;
+            }
+
+            .lcars-panel {
+                border-radius: 20px 0 20px 0;
+            }
+
+            .control-grid {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .lcars-control-btn {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .enterprise-title {
+                font-size: 1.8rem;
+                letter-spacing: 1px;
+            }
+
+            .lcars-stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+        }
+
+        /* Audio Feedback Styles */
+        .audio-feedback {
+            position: fixed;
+            top: -100px;
+            left: -100px;
+            opacity: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Audio elements for LCARS sounds -->
+    <audio class="audio-feedback" id="buttonBeep" preload="auto">
+        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmsbBTaQ2PCKQQsSteLvw2QcBzqM0fPQfycFJHfH8N2QQAoUXrTp66hVFApGn+DyvmsbBTaQ2PCKQQsTteLvw2QcBzqM0fPQfycFJHfH8N2QQAoUXrTp66hVFApGn+DyvmsbBTaQ2PCKQQsSteLvw2QcBzqM0fPQfycFJHfH8N2QQAoUXrTp66hVFApGn+DyvmsbBTaQ2PCKQQsSteLvw2QcBzqM0fPQfycFJHfH8N2QQAoUXrTp66hVFApGn+DyvmsbBTaQ2PCKQQsSteLvw2QcBzqM0fPQfycFJHfH8N2QQAoUXrTp66hVFApGn+DyvmsbBTaQ2PC" type="audio/wav">
+    </audio>
+
+    <div class="lcars-container">
+        <div class="lcars-header">
+            <h1 class="enterprise-title">STARFLEET COMMAND</h1>
+            <p class="enterprise-subtitle">Enhanced MCP Server - Command Interface</p>
+            <div class="starfleet-status">
+                <div class="warp-core-indicator"></div>
+                <span class="status-text">Systems Operational</span>
+                <span id="stardate" class="stardate"></span>
+            </div>
+        </div>
+
+        <div class="lcars-grid">
+            <!-- GIT OPERATIONS PANEL -->
+            <div class="lcars-panel">
+                <div class="lcars-panel-header">
+                    <svg class="lcars-icon" viewBox="0 0 24 24">
+                        <path d="M2.6 10.59L8.38 4.8l1.69 1.7c-.24.85.15 1.78.93 2.23v5.54c-.6.34-1 .99-1 1.73a2 2 0 0 0 2 2 2 2 0 0 0 2-2c0-.74-.4-1.39-1-1.73V9.41l2.07 2.09c-.07.15-.07.32-.07.5a2 2 0 0 0 2 2 2 2 0 0 0 2-2 2 2 0 0 0-2-2c-.18 0-.35 0-.5.07L13.93 7.5a1.98 1.98 0 0 0-1.15-2.34c-.43-.16-.88-.2-1.28-.09L9.8 3.38l.79-.78c.78-.79 2.04-.79 2.82 0l7.99 7.99c.79.78.79 2.04 0 2.82l-7.99 7.99c-.78.78-2.04.78-2.82 0L2.6 13.41c-.79-.78-.79-2.04 0-2.82z"/>
+                    </svg>
+                    <h2>Git Operations</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="lcars-tool-list">
+                        <div class="lcars-button" onclick="executeCommand('git_status')">
+                            <div class="tool-name">📊 Repository Status</div>
+                            <div class="tool-description">Working directory changes, staged files, untracked</div>
+                        </div>
+                        <div class="lcars-button" onclick="promptGitLog()">
+                            <div class="tool-name">📜 Commit History</div>
+                            <div class="tool-description">View commit log with configurable depth</div>
+                        </div>
+                        <div class="lcars-button" onclick="promptGitDiff()">
+                            <div class="tool-name">📝 File Diff</div>
+                            <div class="tool-description">Show changes (staged/unstaged)</div>
+                        </div>
+                        <div class="lcars-button" onclick="executeCommand('git_branch')">
+                            <div class="tool-name">🌿 Branch List</div>
+                            <div class="tool-description">All local and remote branches</div>
+                        </div>
+                        <div class="lcars-button" onclick="gitStash()">
+                            <div class="tool-name">📦 Stash Changes</div>
+                            <div class="tool-description">Save working directory to stash</div>
+                        </div>
+                        <div class="lcars-button" onclick="gitStashPop()">
+                            <div class="tool-name">📤 Pop Stash</div>
+                            <div class="tool-description">Restore stashed changes</div>
+                        </div>
+                        <div class="lcars-button" onclick="gitRemotes()">
+                            <div class="tool-name">🌐 Show Remotes</div>
+                            <div class="tool-description">List remote repositories</div>
+                        </div>
+                        <div class="lcars-button" onclick="gitBlame()">
+                            <div class="tool-name">🔍 Git Blame</div>
+                            <div class="tool-description">Show line-by-line authorship</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FILE SYSTEM PANEL -->
+            <div class="lcars-panel">
+                <div class="lcars-panel-header">
+                    <svg class="lcars-icon" viewBox="0 0 24 24">
+                        <path d="M10,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V8C22,6.89 21.1,6 20,6H12L10,4Z"/>
+                    </svg>
+                    <h2>File System</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="lcars-tool-list">
+                        <div class="lcars-button" onclick="promptListFiles()">
+                            <div class="tool-name">📁 Browse Directory</div>
+                            <div class="tool-description">List contents with type detection</div>
+                        </div>
+                        <div class="lcars-button" onclick="promptReadFile()">
+                            <div class="tool-name">📄 Read File</div>
+                            <div class="tool-description">Display file contents</div>
+                        </div>
+                        <div class="lcars-button" onclick="promptWriteFile()">
+                            <div class="tool-name">✏️ Write File</div>
+                            <div class="tool-description">Create or overwrite file</div>
+                        </div>
+                        <div class="lcars-button" onclick="promptCreateDirectory()">
+                            <div class="tool-name">📂 Create Directory</div>
+                            <div class="tool-description">Make new folder (recursive)</div>
+                        </div>
+                        <div class="lcars-button" onclick="promptCopyFile()">
+                            <div class="tool-name">📋 Copy File</div>
+                            <div class="tool-description">Duplicate file to new location</div>
+                        </div>
+                        <div class="lcars-button" onclick="promptMoveFile()">
+                            <div class="tool-name">📦 Move/Rename</div>
+                            <div class="tool-description">Move or rename file</div>
+                        </div>
+                        <div class="lcars-button" onclick="promptDeleteFile()">
+                            <div class="tool-name">🗑️ Delete File</div>
+                            <div class="tool-description">Remove file (with confirmation)</div>
+                        </div>
+                        <div class="lcars-button" onclick="viewFileInfo()">
+                            <div class="tool-name">ℹ️ File Info</div>
+                            <div class="tool-description">Get file size, dates, permissions</div>
+                        </div>
+                        <div class="lcars-button" onclick="treeView()">
+                            <div class="tool-name">🌳 Tree View</div>
+                            <div class="tool-description">Show directory tree structure</div>
+                        </div>
+                        <div class="lcars-button" onclick="diskUsage()">
+                            <div class="tool-name">💾 Disk Usage</div>
+                            <div class="tool-description">Analyze folder size</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SYSTEM OPERATIONS PANEL -->
+            <div class="lcars-panel">
+                <div class="lcars-panel-header">
+                    <svg class="lcars-icon" viewBox="0 0 24 24">
+                        <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M11,9V7H13V9H11M11,17V11H13V17H11Z"/>
+                    </svg>
+                    <h2>System Operations</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="lcars-tool-list">
+                        <div class="lcars-button" onclick="promptRunCommand()">
+                            <div class="tool-name">⌨️ Execute Command</div>
+                            <div class="tool-description">Run any shell command</div>
+                        </div>
+                        <div class="lcars-button" onclick="executeCommand('system_info')">
+                            <div class="tool-name">💻 System Info</div>
+                            <div class="tool-description">CPU, memory, uptime metrics</div>
+                        </div>
+                        <div class="lcars-button" onclick="promptSearchFiles()">
+                            <div class="tool-name">🔍 Search Files</div>
+                            <div class="tool-description">Find text in files (grep)</div>
+                        </div>
+                        <div class="lcars-button" onclick="listProcesses()">
+                            <div class="tool-name">📊 Process List</div>
+                            <div class="tool-description">Show running processes</div>
+                        </div>
+                        <div class="lcars-button" onclick="killProcess()">
+                            <div class="tool-name">☠️ Kill Process</div>
+                            <div class="tool-description">Terminate process by PID</div>
+                        </div>
+                        <div class="lcars-button" onclick="envVariables()">
+                            <div class="tool-name">🔧 Environment Vars</div>
+                            <div class="tool-description">Show environment variables</div>
+                        </div>
+                        <div class="lcars-button" onclick="networkInfo()">
+                            <div class="tool-name">🌐 Network Info</div>
+                            <div class="tool-description">IP addresses, interfaces</div>
+                        </div>
+                        <div class="lcars-button" onclick="checkPorts()">
+                            <div class="tool-name">🔌 Active Ports</div>
+                            <div class="tool-description">List listening ports</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DATA PROCESSING PANEL -->
+            <div class="lcars-panel">
+                <div class="lcars-panel-header">
+                    <svg class="lcars-icon" viewBox="0 0 24 24">
+                        <path d="M5,3H7V5H5V10A2,2 0 0,1 3,12A2,2 0 0,1 5,14V19H7V21H5C3.93,20.73 3,20.1 3,19V15A2,2 0 0,0 1,13H0V11H1A2,2 0 0,0 3,9V5A2,2 0 0,1 5,3M19,3A2,2 0 0,1 21,5V9A2,2 0 0,0 23,11H24V13H23A2,2 0 0,0 21,15V19A2,2 0 0,1 19,21H17V19H19V14A2,2 0 0,1 21,12A2,2 0 0,1 19,10V5H17V3H19M12,15A1,1 0 0,1 13,16A1,1 0 0,1 12,17A1,1 0 0,1 11,16A1,1 0 0,1 12,15M8,15A1,1 0 0,1 9,16A1,1 0 0,1 8,17A1,1 0 0,1 7,16A1,1 0 0,1 8,15M16,15A1,1 0 0,1 17,16A1,1 0 0,1 16,17A1,1 0 0,1 15,16A1,1 0 0,1 16,15Z"/>
+                    </svg>
+                    <h2>Data Processing</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="lcars-tool-list">
+                        <div class="lcars-button" onclick="promptParseJson()">
+                            <div class="tool-name">🔬 Parse JSON</div>
+                            <div class="tool-description">Validate and parse JSON string</div>
+                        </div>
+                        <div class="lcars-button" onclick="promptFormatJson()">
+                            <div class="tool-name">✨ Format JSON</div>
+                            <div class="tool-description">Pretty print with indentation</div>
+                        </div>
+                        <div class="lcars-button" onclick="base64Encode()">
+                            <div class="tool-name">🔒 Base64 Encode</div>
+                            <div class="tool-description">Encode text to Base64</div>
+                        </div>
+                        <div class="lcars-button" onclick="base64Decode()">
+                            <div class="tool-name">🔓 Base64 Decode</div>
+                            <div class="tool-description">Decode Base64 to text</div>
+                        </div>
+                        <div class="lcars-button" onclick="generateHash()">
+                            <div class="tool-name">🔐 Generate Hash</div>
+                            <div class="tool-description">MD5, SHA1, SHA256 hash</div>
+                        </div>
+                        <div class="lcars-button" onclick="generateUUID()">
+                            <div class="tool-name">🆔 Generate UUID</div>
+                            <div class="tool-description">Create unique identifier</div>
+                        </div>
+                        <div class="lcars-button" onclick="timestampConvert()">
+                            <div class="tool-name">⏰ Timestamp Convert</div>
+                            <div class="tool-description">Unix ↔ Human readable</div>
+                        </div>
+                        <div class="lcars-button" onclick="textStats()">
+                            <div class="tool-name">📏 Text Stats</div>
+                            <div class="tool-description">Word/char/line count</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DOCKER CONTAINERS PANEL -->
+            <div class="lcars-panel">
+                <div class="lcars-panel-header">
+                    <svg class="lcars-icon" viewBox="0 0 24 24">
+                        <path d="M21.81 10.25c-.06-.04-.56-.43-1.64-.43-.28 0-.56.03-.84.08-.21-1.4-1.38-2.11-1.43-2.14l-.29-.17-.18.27c-.24.36-.43.77-.51 1.19-.2.8-.08 1.56.33 2.21-.49.28-1.29.35-1.45.35H2.62c-.34 0-.62.28-.62.63 0 1.04.16 2.08.49 3.07.38 1.14.97 1.98 1.75 2.49.9.57 2.37.9 4.05.9.76 0 1.56-.07 2.37-.24.98-.2 1.92-.54 2.79-1.01.72-.39 1.37-.88 1.93-1.46.9-.93 1.54-2.03 1.98-3.04h.17c1.06 0 1.74-.43 2.11-.79.28-.27.49-.6.59-.95l.08-.3-.19-.16zM3.86 9.45h1.93c.09 0 .17-.08.17-.17V7.57c0-.09-.08-.17-.17-.17H3.86c-.09 0-.17.08-.17.17v1.71c0 .09.08.17.17.17zm2.64 0H8.4c.09 0 .17-.08.17-.17V7.57c0-.09-.08-.17-.17-.17H6.5c-.09 0-.17.08-.17.17v1.71c0 .09.08.17.17.17zm2.69 0h1.9c.09 0 .17-.08.17-.17V7.57c0-.09-.08-.17-.17-.17h-1.9c-.09 0-.17.08-.17.17v1.71c0 .09.08.17.17.17zm2.64 0h1.93c.09 0 .17-.08.17-.17V7.57c0-.09-.08-.17-.17-.17h-1.93c-.09 0-.17.08-.17.17v1.71c0 .09.08.17.17.17zm-5.33-2.5H8.4c.09 0 .17-.08.17-.17V5.07c0-.09-.08-.17-.17-.17H6.5c-.09 0-.17.08-.17.17v1.71c0 .09.08.17.17.17zm2.69 0h1.9c.09 0 .17-.08.17-.17V5.07c0-.09-.08-.17-.17-.17h-1.9c-.09 0-.17.08-.17.17v1.71c0 .09.08.17.17.17zm2.64 0h1.93c.09 0 .17-.08.17-.17V5.07c0-.09-.08-.17-.17-.17h-1.93c-.09 0-.17.08-.17.17v1.71c0 .09.08.17.17.17zm0-2.5h1.93c.09 0 .17-.08.17-.17V2.57c0-.09-.08-.17-.17-.17h-1.93c-.09 0-.17.08-.17.17v1.71c0 .09.08.17.17.17z"/>
+                    </svg>
+                    <h2>Docker Fleet</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="lcars-tool-list">
+                        <div class="lcars-button" onclick="loadDockerContainers()">
+                            <div class="tool-name">🐳 List Containers</div>
+                            <div class="tool-description">Show all container status</div>
+                        </div>
+                        <div class="lcars-button" onclick="dockerComposeUp()">
+                            <div class="tool-name">🚀 Compose Up</div>
+                            <div class="tool-description">Start MCP stack services</div>
+                        </div>
+                        <div class="lcars-button" onclick="dockerComposeDown()">
+                            <div class="tool-name">🛑 Compose Down</div>
+                            <div class="tool-description">Stop all stack services</div>
+                        </div>
+                        <div class="lcars-button" onclick="dockerComposeLogs()">
+                            <div class="tool-name">📜 View Logs</div>
+                            <div class="tool-description">Container log output</div>
+                        </div>
+                        <div class="lcars-button" onclick="dockerStats()">
+                            <div class="tool-name">📊 Resource Stats</div>
+                            <div class="tool-description">CPU/Memory usage per container</div>
+                        </div>
+                        <div class="lcars-button" onclick="dockerRestartContainer()">
+                            <div class="tool-name">🔄 Restart Container</div>
+                            <div class="tool-description">Restart specific container</div>
+                        </div>
+                        <div class="lcars-button" onclick="dockerStopContainer()">
+                            <div class="tool-name">⏹️ Stop Container</div>
+                            <div class="tool-description">Stop specific container</div>
+                        </div>
+                        <div class="lcars-button" onclick="dockerStartContainer()">
+                            <div class="tool-name">▶️ Start Container</div>
+                            <div class="tool-description">Start stopped container</div>
+                        </div>
+                        <div class="lcars-button" onclick="dockerExec()">
+                            <div class="tool-name">💻 Exec in Container</div>
+                            <div class="tool-description">Run command inside container</div>
+                        </div>
+                        <div class="lcars-button" onclick="dockerImages()">
+                            <div class="tool-name">🖼️ List Images</div>
+                            <div class="tool-description">Show Docker images</div>
+                        </div>
+                        <div class="lcars-button" onclick="dockerNetworks()">
+                            <div class="tool-name">🌐 List Networks</div>
+                            <div class="tool-description">Show Docker networks</div>
+                        </div>
+                        <div class="lcars-button" onclick="dockerVolumes()">
+                            <div class="tool-name">💾 List Volumes</div>
+                            <div class="tool-description">Show Docker volumes</div>
+                        </div>
+                        <div class="lcars-button" onclick="dockerPrune()">
+                            <div class="tool-name">🧹 System Prune</div>
+                            <div class="tool-description">Clean unused resources</div>
+                        </div>
+                        <div class="lcars-button" onclick="dockerInspect()">
+                            <div class="tool-name">🔍 Inspect Container</div>
+                            <div class="tool-description">Detailed container config</div>
+                        </div>
+                    </div>
+                    <div id="docker-status" style="margin-top: 15px;"></div>
+                </div>
+            </div>
+
+            <!-- MCP SERVICES PANEL -->
+            <div class="lcars-panel">
+                <div class="lcars-panel-header">
+                    <svg class="lcars-icon" viewBox="0 0 24 24">
+                        <path d="M4,1C2.89,1 2,1.89 2,3V7C2,8.11 2.89,9 4,9H1V11H13V9H10C11.11,9 12,8.11 12,7V3C12,1.89 11.11,1 10,1H4M4,3H10V7H4V3M14,13C12.89,13 12,13.89 12,15V19C12,20.11 12.89,21 14,21H11V23H23V21H20C21.11,21 22,20.11 22,19V15C22,13.89 21.11,13 20,13H14M3,13V18L3,20H5V18H8V20H10V18C10,16.89 9.11,16 8,16H5C3.89,16 3,16.89 3,18V13H1V11H3V13M14,15H20V19H14V15Z"/>
+                    </svg>
+                    <h2>MCP Services</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="lcars-stats-grid" id="services-grid">
+                        <div class="lcars-stat-pod" onclick="openService('http://localhost:3001')" title="MCP Server Dashboard">
+                            <div class="stat-value" style="font-size: 1.2rem;">🖥️</div>
+                            <div class="stat-label">MCP Server<br><small>:3001</small></div>
+                        </div>
+                        <div class="lcars-stat-pod" onclick="openService('http://localhost:3000')" title="Grafana Dashboards">
+                            <div class="stat-value" style="font-size: 1.2rem;">📊</div>
+                            <div class="stat-label">Grafana<br><small>:3000</small></div>
+                        </div>
+                        <div class="lcars-stat-pod" onclick="openService('http://localhost:9090')" title="Prometheus Metrics">
+                            <div class="stat-value" style="font-size: 1.2rem;">📈</div>
+                            <div class="stat-label">Prometheus<br><small>:9090</small></div>
+                        </div>
+                        <div class="lcars-stat-pod" onclick="openService('http://localhost:3002')" title="Analytics Dashboard">
+                            <div class="stat-value" style="font-size: 1.2rem;">📉</div>
+                            <div class="stat-label">Analytics<br><small>:3002</small></div>
+                        </div>
+                        <div class="lcars-stat-pod" onclick="openService('http://localhost:8080')" title="Container Advisor">
+                            <div class="stat-value" style="font-size: 1.2rem;">📦</div>
+                            <div class="stat-label">cAdvisor<br><small>:8080</small></div>
+                        </div>
+                        <div class="lcars-stat-pod" onclick="checkRedis()" title="Redis Cache">
+                            <div class="stat-value" style="font-size: 1.2rem;">🔴</div>
+                            <div class="stat-label">Redis<br><small>:6379</small></div>
+                        </div>
+                        <div class="lcars-stat-pod" onclick="openService('http://localhost:80')" title="Nginx Proxy">
+                            <div class="stat-value" style="font-size: 1.2rem;">🌐</div>
+                            <div class="stat-label">Nginx<br><small>:80</small></div>
+                        </div>
+                        <div class="lcars-stat-pod" onclick="checkNodeExporter()" title="Node Exporter Metrics">
+                            <div class="stat-value" style="font-size: 1.2rem;">📡</div>
+                            <div class="stat-label">Node Exp<br><small>:9100</small></div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <div class="lcars-button" onclick="checkAllServices()">
+                            <div class="tool-name">💓 Health Check All</div>
+                            <div class="tool-description">Verify all services are responding</div>
+                        </div>
+                        <div class="lcars-button" onclick="prometheusQuery()">
+                            <div class="tool-name">📊 Prometheus Query</div>
+                            <div class="tool-description">Execute PromQL query</div>
+                        </div>
+                        <div class="lcars-button" onclick="grafanaApiTest()">
+                            <div class="tool-name">📈 Grafana API</div>
+                            <div class="tool-description">Test Grafana connection</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QUICK ACTIONS PANEL -->
+            <div class="lcars-panel">
+                <div class="lcars-panel-header">
+                    <svg class="lcars-icon" viewBox="0 0 24 24">
+                        <path d="M13,10H11V6H13V10M13,14H11V12H13V14M22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2A10,10 0 0,1 22,12M20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12Z"/>
+                    </svg>
+                    <h2>Quick Actions</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="lcars-tool-list">
+                        <div class="lcars-button" onclick="executeCommand('list_files', {directory: '.', hidden: true})">
+                            <div class="tool-name">📁 All Project Files</div>
+                            <div class="tool-description">Show files including hidden</div>
+                        </div>
+                        <div class="lcars-button" onclick="executeCommand('read_file', {filepath: 'package.json'})">
+                            <div class="tool-name">📦 View package.json</div>
+                            <div class="tool-description">Project configuration</div>
+                        </div>
+                        <div class="lcars-button" onclick="executeCommand('run_command', {command: 'npm list --depth=0'})">
+                            <div class="tool-name">📋 List Dependencies</div>
+                            <div class="tool-description">Installed npm packages</div>
+                        </div>
+                        <div class="lcars-button" onclick="executeCommand('search_files', {query: 'TODO', searchDir: '.'})">
+                            <div class="tool-name">✅ Find TODOs</div>
+                            <div class="tool-description">Search TODO comments</div>
+                        </div>
+                        <div class="lcars-button" onclick="executeCommand('read_file', {filepath: 'README.md'})">
+                            <div class="tool-name">📖 View README</div>
+                            <div class="tool-description">Project documentation</div>
+                        </div>
+                        <div class="lcars-button" onclick="executeCommand('read_file', {filepath: '.env'})">
+                            <div class="tool-name">🔐 View .env</div>
+                            <div class="tool-description">Environment config</div>
+                        </div>
+                        <div class="lcars-button" onclick="executeCommand('read_file', {filepath: 'docker-compose.yml'})">
+                            <div class="tool-name">🐳 View Compose File</div>
+                            <div class="tool-description">Docker stack config</div>
+                        </div>
+                        <div class="lcars-button" onclick="npmAudit()">
+                            <div class="tool-name">🔒 NPM Security Audit</div>
+                            <div class="tool-description">Check for vulnerabilities</div>
+                        </div>
+                        <div class="lcars-button" onclick="npmOutdated()">
+                            <div class="tool-name">📦 Outdated Packages</div>
+                            <div class="tool-description">Check for updates</div>
+                        </div>
+                        <div class="lcars-button" onclick="executeCommand('run_command', {command: 'node -v && npm -v'})">
+                            <div class="tool-name">📋 Node/NPM Version</div>
+                            <div class="tool-description">Runtime versions</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NETWORK PANEL -->
+            <div class="lcars-panel">
+                <div class="lcars-panel-header">
+                    <svg class="lcars-icon" viewBox="0 0 24 24">
+                        <path d="M17,3A2,2 0 0,1 19,5V15A2,2 0 0,1 17,17H13V19H14A1,1 0 0,1 15,20H22V22H15A1,1 0 0,1 14,23H10A1,1 0 0,1 9,22H2V20H9A1,1 0 0,1 10,19H11V17H7A2,2 0 0,1 5,15V5A2,2 0 0,1 7,3H17M7,5V15H17V5H7M15,7V9H13V13H11V9H9V7H15Z"/>
+                    </svg>
+                    <h2>Network Tools</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="lcars-tool-list">
+                        <div class="lcars-button" onclick="pingHost()">
+                            <div class="tool-name">📡 Ping Host</div>
+                            <div class="tool-description">Test network connectivity</div>
+                        </div>
+                        <div class="lcars-button" onclick="curlRequest()">
+                            <div class="tool-name">🌐 cURL Request</div>
+                            <div class="tool-description">Make HTTP request</div>
+                        </div>
+                        <div class="lcars-button" onclick="dnsLookup()">
+                            <div class="tool-name">🔍 DNS Lookup</div>
+                            <div class="tool-description">Resolve hostname</div>
+                        </div>
+                        <div class="lcars-button" onclick="checkPorts()">
+                            <div class="tool-name">🔌 Active Ports</div>
+                            <div class="tool-description">Listening connections</div>
+                        </div>
+                        <div class="lcars-button" onclick="networkInterfaces()">
+                            <div class="tool-name">🖧 Interfaces</div>
+                            <div class="tool-description">Network adapter info</div>
+                        </div>
+                        <div class="lcars-button" onclick="routeTable()">
+                            <div class="tool-name">🗺️ Route Table</div>
+                            <div class="tool-description">Network routing info</div>
+                        </div>
+                        <div class="lcars-button" onclick="wgetDownload()">
+                            <div class="tool-name">⬇️ Download File</div>
+                            <div class="tool-description">Download from URL</div>
+                        </div>
+                        <div class="lcars-button" onclick="publicIP()">
+                            <div class="tool-name">🌍 Public IP</div>
+                            <div class="tool-description">Get external IP address</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NPM/NODE PANEL -->
+            <div class="lcars-panel">
+                <div class="lcars-panel-header">
+                    <svg class="lcars-icon" viewBox="0 0 24 24">
+                        <path d="M12,1.85C11.73,1.85 11.45,1.92 11.22,2.05L3.78,6.35C3.3,6.63 3,7.15 3,7.71V16.29C3,16.85 3.3,17.37 3.78,17.65L5.73,18.77C6.68,19.23 7,19.24 7.44,19.24C8.84,19.24 9.65,18.39 9.65,16.91V8.44C9.65,8.32 9.55,8.22 9.43,8.22H8.5C8.37,8.22 8.27,8.32 8.27,8.44V16.91C8.27,17.57 7.59,18.22 6.5,17.67L4.45,16.5C4.38,16.45 4.34,16.37 4.34,16.29V7.71C4.34,7.62 4.38,7.54 4.45,7.5L11.89,3.21C11.95,3.17 12.05,3.17 12.11,3.21L19.55,7.5C19.62,7.54 19.66,7.62 19.66,7.71V16.29C19.66,16.37 19.62,16.45 19.55,16.5L12.11,20.79C12.05,20.83 11.95,20.83 11.88,20.79L10,19.65C9.92,19.62 9.84,19.61 9.79,19.64C9.26,19.94 9.16,20 8.67,20.15C8.55,20.19 8.36,20.26 8.74,20.47L11.22,21.94C11.46,22.08 11.72,22.15 12,22.15C12.28,22.15 12.54,22.08 12.78,21.94L20.22,17.65C20.7,17.37 21,16.85 21,16.29V7.71C21,7.15 20.7,6.63 20.22,6.35L12.78,2.05C12.55,1.92 12.28,1.85 12,1.85M14,8C11.88,8 10.61,8.89 10.61,10.39C10.61,12 11.87,12.47 13.91,12.67C16.34,12.91 16.53,13.27 16.53,13.75C16.53,14.58 15.86,14.93 14.3,14.93C12.32,14.93 11.9,14.44 11.75,13.46C11.73,13.36 11.64,13.28 11.53,13.28H10.57C10.45,13.28 10.36,13.37 10.36,13.5C10.36,14.74 11.04,16.24 14.3,16.24C16.65,16.24 18,15.31 18,13.69C18,12.08 16.92,11.66 14.63,11.35C12.32,11.05 12.09,10.89 12.09,10.35C12.09,9.9 12.29,9.3 14,9.3C15.5,9.3 16.09,9.63 16.32,10.66C16.34,10.76 16.43,10.83 16.53,10.83H17.5C17.55,10.83 17.61,10.81 17.65,10.76C17.69,10.72 17.72,10.66 17.71,10.6C17.56,8.82 16.38,8 14,8Z"/>
+                    </svg>
+                    <h2>NPM / Node.js</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="lcars-tool-list">
+                        <div class="lcars-button" onclick="npmInstall()">
+                            <div class="tool-name">📦 NPM Install</div>
+                            <div class="tool-description">Install dependencies</div>
+                        </div>
+                        <div class="lcars-button" onclick="npmUpdate()">
+                            <div class="tool-name">⬆️ NPM Update</div>
+                            <div class="tool-description">Update packages</div>
+                        </div>
+                        <div class="lcars-button" onclick="npmAudit()">
+                            <div class="tool-name">🔒 Security Audit</div>
+                            <div class="tool-description">Check vulnerabilities</div>
+                        </div>
+                        <div class="lcars-button" onclick="npmOutdated()">
+                            <div class="tool-name">📋 Outdated Pkgs</div>
+                            <div class="tool-description">List updatable packages</div>
+                        </div>
+                        <div class="lcars-button" onclick="npmRunScript()">
+                            <div class="tool-name">▶️ Run Script</div>
+                            <div class="tool-description">Execute npm script</div>
+                        </div>
+                        <div class="lcars-button" onclick="npmListGlobal()">
+                            <div class="tool-name">🌍 Global Packages</div>
+                            <div class="tool-description">List global installs</div>
+                        </div>
+                        <div class="lcars-button" onclick="npmCacheClear()">
+                            <div class="tool-name">🧹 Clear Cache</div>
+                            <div class="tool-description">Clear NPM cache</div>
+                        </div>
+                        <div class="lcars-button" onclick="nodeEval()">
+                            <div class="tool-name">⚡ Node Eval</div>
+                            <div class="tool-description">Execute JS expression</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SHIP STATUS PANEL -->
+            <div class="lcars-panel">
+                <div class="lcars-panel-header">
+                    <svg class="lcars-icon" viewBox="0 0 24 24">
+                        <path d="M19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M19,19H5V5H19V19M17,17V15.5H15.5V14H17V12.5H15.5V11H17V9.5H15.5V8H17V6.5H15.5V5H17V6.5H18.5V8H17V9.5H18.5V11H17V12.5H18.5V14H17V15.5H18.5V17H17Z"/>
+                    </svg>
+                    <h2>Ship's Status</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="lcars-stats-grid" id="system-stats">
+                        <div class="lcars-loading" style="display: flex;">
+                            <div class="warp-spinner"></div>
+                            <span>SCANNING...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- =============================================== -->
+            <!-- REAL-TIME ANALYTICS PANEL - FULL WIDTH -->
+            <!-- =============================================== -->
+            <div class="lcars-panel analytics-full-width">
+                <div class="lcars-panel-header">
+                    <svg class="lcars-icon" viewBox="0 0 24 24">
+                        <path d="M16,11.78L20.24,4.45L21.97,5.45L16.74,14.5L10.23,10.75L5.46,19H22V21H2V3H4V17.54L9.5,8L16,11.78Z"/>
+                    </svg>
+                    <h2>Real-Time Analytics</h2>
+                </div>
+                <div class="panel-content">
+                    <!-- Analytics Controls -->
+                    <div class="analytics-controls">
+                        <button class="analytics-btn active" onclick="setAnalyticsTimeRange('1m')">1 MIN</button>
+                        <button class="analytics-btn" onclick="setAnalyticsTimeRange('5m')">5 MIN</button>
+                        <button class="analytics-btn" onclick="setAnalyticsTimeRange('15m')">15 MIN</button>
+                        <button class="analytics-btn" onclick="setAnalyticsTimeRange('1h')">1 HOUR</button>
+                        <button class="analytics-btn" onclick="toggleAnalyticsPause()">⏸ PAUSE</button>
+                        <button class="analytics-btn" onclick="exportAnalyticsData()">📊 EXPORT</button>
+                    </div>
+
+                    <!-- Key Metrics Cards -->
+                    <div class="analytics-dashboard" id="analytics-cards">
+                        <div class="analytics-card">
+                            <div class="analytics-icon">⚡</div>
+                            <div class="analytics-value" id="metric-requests">0</div>
+                            <div class="analytics-label">Requests/sec</div>
+                            <div class="analytics-trend trend-stable" id="trend-requests">━ 0%</div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="analytics-icon">🔄</div>
+                            <div class="analytics-value" id="metric-throughput">0 KB</div>
+                            <div class="analytics-label">Throughput</div>
+                            <div class="analytics-trend trend-up" id="trend-throughput">↑ 0%</div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="analytics-icon">⏱️</div>
+                            <div class="analytics-value" id="metric-latency">0ms</div>
+                            <div class="analytics-label">Avg Latency</div>
+                            <div class="analytics-trend trend-stable" id="trend-latency">━ 0%</div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="analytics-icon">✅</div>
+                            <div class="analytics-value" id="metric-success">100%</div>
+                            <div class="analytics-label">Success Rate</div>
+                            <div class="analytics-trend trend-up" id="trend-success">↑ 0%</div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="analytics-icon">🔥</div>
+                            <div class="analytics-value" id="metric-active">0</div>
+                            <div class="analytics-label">Active Conns</div>
+                            <div class="analytics-trend trend-stable" id="trend-active">━ 0</div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="analytics-icon">🛠️</div>
+                            <div class="analytics-value" id="metric-tools">0</div>
+                            <div class="analytics-label">Tool Calls</div>
+                            <div class="analytics-trend trend-up" id="trend-tools">↑ 0</div>
+                        </div>
+                    </div>
+
+                    <!-- Live Performance Chart -->
+                    <div class="chart-container">
+                        <div class="chart-title">
+                            <span class="live-dot"></span>
+                            SYSTEM PERFORMANCE - LIVE
+                        </div>
+                        <svg class="svg-chart" id="performance-chart" viewBox="0 0 600 150" preserveAspectRatio="none">
+                            <!-- Grid lines -->
+                            <line class="chart-grid-line" x1="0" y1="37.5" x2="600" y2="37.5"/>
+                            <line class="chart-grid-line" x1="0" y1="75" x2="600" y2="75"/>
+                            <line class="chart-grid-line" x1="0" y1="112.5" x2="600" y2="112.5"/>
+                            <!-- Axis labels -->
+                            <text class="chart-axis-label" x="5" y="12">100%</text>
+                            <text class="chart-axis-label" x="5" y="42">75%</text>
+                            <text class="chart-axis-label" x="5" y="80">50%</text>
+                            <text class="chart-axis-label" x="5" y="117">25%</text>
+                            <text class="chart-axis-label" x="5" y="148">0%</text>
+                            <!-- Chart areas (gradients) -->
+                            <defs>
+                                <linearGradient id="cpuGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" style="stop-color:rgb(255,0,0);stop-opacity:0.4"/>
+                                    <stop offset="100%" style="stop-color:rgb(255,0,0);stop-opacity:0"/>
+                                </linearGradient>
+                                <linearGradient id="memGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" style="stop-color:rgb(0,255,65);stop-opacity:0.4"/>
+                                    <stop offset="100%" style="stop-color:rgb(0,255,65);stop-opacity:0"/>
+                                </linearGradient>
+                            </defs>
+                            <!-- CPU area -->
+                            <path id="cpu-area" class="chart-area" fill="url(#cpuGradient)" d="M0,150 L0,150 L600,150 Z"/>
+                            <!-- Memory area -->
+                            <path id="memory-area" class="chart-area" fill="url(#memGradient)" d="M0,150 L0,150 L600,150 Z"/>
+                            <!-- CPU line -->
+                            <path id="cpu-line" class="chart-line chart-line-cpu" d="M0,150"/>
+                            <!-- Memory line -->
+                            <path id="memory-line" class="chart-line chart-line-memory" d="M0,150"/>
+                        </svg>
+                        <div style="display: flex; justify-content: center; gap: 30px; margin-top: 10px;">
+                            <span style="color: var(--alert-red);">■ CPU Usage</span>
+                            <span style="color: var(--console-green);">■ Memory Usage</span>
+                        </div>
+                    </div>
+
+                    <!-- Gauge Meters Row -->
+                    <div class="gauge-container" id="gauge-meters">
+                        <div class="gauge">
+                            <svg class="gauge-svg" viewBox="0 0 100 100">
+                                <circle class="gauge-bg" cx="50" cy="50" r="40"/>
+                                <circle class="gauge-fill gauge-fill-cpu" cx="50" cy="50" r="40" 
+                                        stroke-dasharray="251.2" stroke-dashoffset="251.2" id="gauge-cpu"/>
+                            </svg>
+                            <div class="gauge-value" id="gauge-cpu-value">0%</div>
+                            <div class="gauge-label">CPU</div>
+                        </div>
+                        <div class="gauge">
+                            <svg class="gauge-svg" viewBox="0 0 100 100">
+                                <circle class="gauge-bg" cx="50" cy="50" r="40"/>
+                                <circle class="gauge-fill gauge-fill-memory" cx="50" cy="50" r="40" 
+                                        stroke-dasharray="251.2" stroke-dashoffset="251.2" id="gauge-memory"/>
+                            </svg>
+                            <div class="gauge-value" id="gauge-memory-value">0%</div>
+                            <div class="gauge-label">Memory</div>
+                        </div>
+                        <div class="gauge">
+                            <svg class="gauge-svg" viewBox="0 0 100 100">
+                                <circle class="gauge-bg" cx="50" cy="50" r="40"/>
+                                <circle class="gauge-fill gauge-fill-disk" cx="50" cy="50" r="40" 
+                                        stroke-dasharray="251.2" stroke-dashoffset="251.2" id="gauge-disk"/>
+                            </svg>
+                            <div class="gauge-value" id="gauge-disk-value">0%</div>
+                            <div class="gauge-label">Disk</div>
+                        </div>
+                        <div class="gauge">
+                            <svg class="gauge-svg" viewBox="0 0 100 100">
+                                <circle class="gauge-bg" cx="50" cy="50" r="40"/>
+                                <circle class="gauge-fill gauge-fill-network" cx="50" cy="50" r="40" 
+                                        stroke-dasharray="251.2" stroke-dashoffset="251.2" id="gauge-network"/>
+                            </svg>
+                            <div class="gauge-value" id="gauge-network-value">0%</div>
+                            <div class="gauge-label">Network</div>
+                        </div>
+                    </div>
+
+                    <!-- Activity Heatmap -->
+                    <div class="chart-container">
+                        <div class="chart-title">📊 ACTIVITY HEATMAP - LAST 60 SECONDS</div>
+                        <div class="heatmap-grid" id="activity-heatmap">
+                            <!-- Dynamically filled -->
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--lcars-light-blue); margin-top: 8px;">
+                            <span>Low Activity</span>
+                            <div style="display: flex; gap: 3px;">
+                                <span class="heatmap-cell heat-0" style="width: 12px; height: 12px;"></span>
+                                <span class="heatmap-cell heat-2" style="width: 12px; height: 12px;"></span>
+                                <span class="heatmap-cell heat-4" style="width: 12px; height: 12px;"></span>
+                                <span class="heatmap-cell heat-6" style="width: 12px; height: 12px;"></span>
+                                <span class="heatmap-cell heat-8" style="width: 12px; height: 12px;"></span>
+                            </div>
+                            <span>High Activity</span>
+                        </div>
+                    </div>
+
+                    <!-- Service Status Grid -->
+                    <div class="chart-container">
+                        <div class="chart-title">🔗 SERVICE STATUS</div>
+                        <div class="service-grid" id="service-status-grid">
+                            <div class="service-status online">
+                                <div class="service-indicator online"></div>
+                                <div class="service-name">MCP Server</div>
+                                <div class="service-latency">~2ms</div>
+                            </div>
+                            <div class="service-status online">
+                                <div class="service-indicator online"></div>
+                                <div class="service-name">Redis</div>
+                                <div class="service-latency">~1ms</div>
+                            </div>
+                            <div class="service-status online">
+                                <div class="service-indicator online"></div>
+                                <div class="service-name">Prometheus</div>
+                                <div class="service-latency">~5ms</div>
+                            </div>
+                            <div class="service-status online">
+                                <div class="service-indicator online"></div>
+                                <div class="service-name">Grafana</div>
+                                <div class="service-latency">~8ms</div>
+                            </div>
+                            <div class="service-status degraded">
+                                <div class="service-indicator degraded"></div>
+                                <div class="service-name">Analytics</div>
+                                <div class="service-latency">~45ms</div>
+                            </div>
+                            <div class="service-status online">
+                                <div class="service-indicator online"></div>
+                                <div class="service-name">Nginx</div>
+                                <div class="service-latency">~1ms</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sparkline Metrics -->
+                    <div class="chart-container">
+                        <div class="chart-title">📈 RESOURCE TRENDS</div>
+                        <div class="sparkline-container">
+                            <span class="sparkline-label">CPU Load</span>
+                            <svg class="sparkline" id="spark-cpu" viewBox="0 0 100 30" preserveAspectRatio="none">
+                                <path d="M0,25 L100,25" stroke="var(--alert-red)" stroke-width="2" fill="none"/>
+                            </svg>
+                            <span class="sparkline-value" id="spark-cpu-val">0%</span>
+                        </div>
+                        <div class="sparkline-container">
+                            <span class="sparkline-label">Memory</span>
+                            <svg class="sparkline" id="spark-memory" viewBox="0 0 100 30" preserveAspectRatio="none">
+                                <path d="M0,25 L100,25" stroke="var(--console-green)" stroke-width="2" fill="none"/>
+                            </svg>
+                            <span class="sparkline-value" id="spark-memory-val">0%</span>
+                        </div>
+                        <div class="sparkline-container">
+                            <span class="sparkline-label">Network I/O</span>
+                            <svg class="sparkline" id="spark-network" viewBox="0 0 100 30" preserveAspectRatio="none">
+                                <path d="M0,25 L100,25" stroke="var(--warp-core-blue)" stroke-width="2" fill="none"/>
+                            </svg>
+                            <span class="sparkline-value" id="spark-network-val">0 KB/s</span>
+                        </div>
+                        <div class="sparkline-container">
+                            <span class="sparkline-label">Disk I/O</span>
+                            <svg class="sparkline" id="spark-disk" viewBox="0 0 100 30" preserveAspectRatio="none">
+                                <path d="M0,25 L100,25" stroke="var(--enterprise-gold)" stroke-width="2" fill="none"/>
+                            </svg>
+                            <span class="sparkline-value" id="spark-disk-val">0 KB/s</span>
+                        </div>
+                    </div>
+
+                    <!-- Live Activity Feed -->
+                    <div class="chart-container">
+                        <div class="chart-title">
+                            <span class="live-dot"></span>
+                            ACTIVITY FEED
+                        </div>
+                        <div class="activity-feed" id="activity-feed">
+                            <div class="activity-item success">
+                                <span class="activity-icon">✅</span>
+                                <div class="activity-content">
+                                    <div class="activity-title">System initialized</div>
+                                    <div class="activity-time">Just now</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Metric Tiles -->
+                    <div class="metric-tiles" id="metric-tiles">
+                        <div class="metric-tile">
+                            <div class="metric-tile-value" id="tile-uptime">0h</div>
+                            <div class="metric-tile-label">Uptime</div>
+                        </div>
+                        <div class="metric-tile">
+                            <div class="metric-tile-value" id="tile-total-req">0</div>
+                            <div class="metric-tile-label">Total Requests</div>
+                        </div>
+                        <div class="metric-tile">
+                            <div class="metric-tile-value" id="tile-errors">0</div>
+                            <div class="metric-tile-label">Errors</div>
+                        </div>
+                        <div class="metric-tile">
+                            <div class="metric-tile-value" id="tile-avg-resp">0ms</div>
+                            <div class="metric-tile-label">Avg Response</div>
+                        </div>
+                        <div class="metric-tile">
+                            <div class="metric-tile-value" id="tile-peak-cpu">0%</div>
+                            <div class="metric-tile-label">Peak CPU</div>
+                        </div>
+                        <div class="metric-tile">
+                            <div class="metric-tile-value" id="tile-peak-mem">0%</div>
+                            <div class="metric-tile-label">Peak Memory</div>
+                        </div>
+                        <div class="metric-tile">
+                            <div class="metric-tile-value" id="tile-containers">0</div>
+                            <div class="metric-tile-label">Containers</div>
+                        </div>
+                        <div class="metric-tile">
+                            <div class="metric-tile-value" id="tile-images">0</div>
+                            <div class="metric-tile-label">Images</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TERMINAL PANEL -->
+            <div class="lcars-panel lcars-terminal-container">
+                <div class="lcars-panel-header">
+                    <svg class="lcars-icon" viewBox="0 0 24 24">
+                        <path d="M2,3H22V21H2V3M4,5V19H20V5H4M6,7H18V9H6V7M6,11H14V13H6V11M6,15H16V17H6V15Z"/>
+                    </svg>
+                    <h2>Command Console</h2>
+                </div>
+                <div class="lcars-terminal">
+                    <div class="terminal-header">
+                        <div class="enterprise-logo">
+                            <div class="status-indicator operational"></div>
+                            <div class="status-indicator standby"></div>
+                            <div class="status-indicator operational"></div>
+                        </div>
+                        <div class="terminal-title">Main Console</div>
+                    </div>
+                    <div class="terminal-content" id="terminal-content">
+                        <div class="terminal-line">
+                            <span class="terminal-prompt">STARDATE 2024.08.13 </span>
+                            <span class="terminal-command">Enhanced MCP Server - Command Interface Ready</span>
+                        </div>
+                        <div class="terminal-line terminal-output">Initialize any system by activating the appropriate control above...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="lcars-control-panel">
+            <div class="control-grid">
+                <button class="lcars-control-btn btn-primary" onclick="refreshDashboard()">
+                    <span>⟳ System Refresh</span>
+                </button>
+                <button class="lcars-control-btn btn-secondary" onclick="clearTerminal()">
+                    <span>✕ Console Reset</span>
+                </button>
+                <button class="lcars-control-btn btn-success" onclick="runHealthCheck()">
+                    <span>⚡ Full Diagnostic</span>
+                </button>
+                <button class="lcars-control-btn btn-primary" onclick="listAvailableTools()">
+                    <span>📋 MCP Tools</span>
+                </button>
+                <button class="lcars-control-btn btn-secondary" onclick="loadDockerContainers()">
+                    <span>🐳 Docker Status</span>
+                </button>
+                <button class="lcars-control-btn btn-secondary" onclick="dockerStats()">
+                    <span>📊 Container Stats</span>
+                </button>
+                <button class="lcars-control-btn btn-secondary" onclick="checkAllServices()">
+                    <span>💓 Service Health</span>
+                </button>
+                <button class="lcars-control-btn btn-secondary" onclick="promptRunCommand()">
+                    <span>⌨ Quick Command</span>
+                </button>
+                <button class="lcars-control-btn btn-primary" onclick="executeCommand('system_info')">
+                    <span>💻 System Info</span>
+                </button>
+                <button class="lcars-control-btn btn-secondary" onclick="executeCommand('git_status')">
+                    <span>📊 Git Status</span>
+                </button>
+                <button class="lcars-control-btn btn-success" onclick="publicIP()">
+                    <span>🌍 Public IP</span>
+                </button>
+                <button class="lcars-control-btn btn-secondary" onclick="checkPorts()">
+                    <span>🔌 Active Ports</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="starfleet-footer">
+            <div class="federation-emblem">★</div>
+            <p class="footer-text">STARFLEET COMMAND - Enhanced MCP Server Interface</p>
+        </div>
+    </div>
+
+    <script>
+        // =====================================================
+        // STARFLEET COMMAND INTERFACE - Core Systems
+        // =====================================================
+        
+        const API_BASE = window.location.origin;
+        let audioContext = null;
+        let isExecuting = false;
+        let serverOnline = false;
+        let autoRefreshInterval = null;
+        
+        // =====================================================
+        // LCARS Audio System
+        // =====================================================
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            return audioContext;
+        }
+
+        function playBeep(frequency = 800, duration = 0.1, type = 'square') {
+            try {
+                const ctx = initAudio();
+                if (ctx.state === 'suspended') ctx.resume();
+                
+                const oscillator = ctx.createOscillator();
+                const gainNode = ctx.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(ctx.destination);
+                
+                oscillator.frequency.setValueAtTime(frequency, ctx.currentTime);
+                oscillator.type = type;
+                
+                gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+                
+                oscillator.start(ctx.currentTime);
+                oscillator.stop(ctx.currentTime + duration);
+            } catch (e) {
+                // Audio not supported, silently fail
+            }
+        }
+
+        function playSuccessSound() {
+            playBeep(880, 0.1);
+            setTimeout(() => playBeep(1100, 0.15), 100);
+        }
+
+        function playErrorSound() {
+            playBeep(300, 0.2, 'sawtooth');
+            setTimeout(() => playBeep(200, 0.3, 'sawtooth'), 150);
+        }
+
+        // =====================================================
+        // Stardate System
+        // =====================================================
+        function generateStardate(date = new Date()) {
+            const year = date.getFullYear();
+            const dayOfYear = Math.floor((date - new Date(year, 0, 0)) / 1000 / 60 / 60 / 24);
+            const timeOfDay = (date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds()) / 86400;
+            return `${year}.${String(dayOfYear).padStart(3, '0')}.${String(Math.floor(timeOfDay * 10)).padStart(1, '0')}`;
+        }
+
+        function updateStardate() {
+            const element = document.getElementById('stardate');
+            if (element) {
+                element.textContent = `STARDATE: ${generateStardate()}`;
+            }
+        }
+
+        // =====================================================
+        // Terminal System
+        // =====================================================
+        function addTerminalLine(command, output, isError = false) {
+            const terminal = document.getElementById('terminal-content');
+            if (!terminal) return;
+            
+            const stardate = generateStardate();
+            
+            // Command line
+            const commandLine = document.createElement('div');
+            commandLine.className = 'terminal-line';
+            commandLine.innerHTML = `<span class="terminal-prompt">STARDATE ${stardate} </span><span class="terminal-command">${escapeHtml(command)}</span>`;
+            
+            // Output line (handle multi-line output)
+            const outputLine = document.createElement('div');
+            outputLine.className = `terminal-line terminal-output ${isError ? 'error' : ''}`;
+            
+            // Format output - handle JSON and multi-line
+            let formattedOutput = output;
+            if (typeof output === 'object') {
+                formattedOutput = JSON.stringify(output, null, 2);
+            }
+            
+            // Create pre element for formatted output
+            const pre = document.createElement('pre');
+            pre.style.cssText = 'margin: 0; white-space: pre-wrap; word-wrap: break-word; font-family: inherit;';
+            pre.textContent = formattedOutput;
+            outputLine.appendChild(pre);
+            
+            terminal.appendChild(commandLine);
+            terminal.appendChild(outputLine);
+            terminal.scrollTop = terminal.scrollHeight;
+            
+            // Limit terminal history
+            while (terminal.children.length > 100) {
+                terminal.removeChild(terminal.firstChild);
+            }
+        }
+
+        function clearTerminal() {
+            const terminal = document.getElementById('terminal-content');
+            if (!terminal) return;
+            
+            playBeep();
+            terminal.innerHTML = `
+                <div class="terminal-line">
+                    <span class="terminal-prompt">STARDATE ${generateStardate()} </span>
+                    <span class="terminal-command">CONSOLE RESET - All previous logs purged</span>
+                </div>
+            `;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // =====================================================
+        // API Communication System
+        // =====================================================
+        async function apiCall(endpoint, method = 'GET', body = null) {
+            const options = {
+                method,
+                headers: { 'Content-Type': 'application/json' }
+            };
+            
+            if (body) {
+                options.body = JSON.stringify(body);
+            }
+            
+            const response = await fetch(`${API_BASE}${endpoint}`, options);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            return response.json();
+        }
+
+        async function checkServerStatus() {
+            try {
+                const status = await apiCall('/api/status');
+                serverOnline = status.status === 'online';
+                updateStatusIndicators(serverOnline);
+                return status;
+            } catch (error) {
+                serverOnline = false;
+                updateStatusIndicators(false);
+                throw error;
+            }
+        }
+
+        function updateStatusIndicators(online) {
+            const indicators = document.querySelectorAll('.status-indicator');
+            const statusText = document.querySelector('.status-text');
+            
+            indicators.forEach((ind, i) => {
+                if (online) {
+                    ind.className = 'status-indicator ' + (i === 1 ? 'standby' : 'operational');
+                } else {
+                    ind.className = 'status-indicator alert';
+                }
+            });
+            
+            if (statusText) {
+                statusText.textContent = online ? 'Systems Operational' : 'CONNECTION LOST';
+                statusText.style.color = online ? 'var(--console-green)' : 'var(--alert-red)';
+            }
+        }
+
+        // =====================================================
+        // Command Execution Engine
+        // =====================================================
+        async function executeCommand(toolName, args = {}) {
+            if (isExecuting) {
+                addTerminalLine('QUEUE', 'Previous command still processing...', true);
+                return;
+            }
+            
+            isExecuting = true;
+            const lcarsName = toolName.toUpperCase().replace(/_/g, '-');
+            
+            try {
+                playBeep();
+                addTerminalLine(`${lcarsName} INITIATED`, 'PROCESSING REQUEST...');
+                
+                // Set button loading state
+                setButtonsLoading(true);
+                
+                const result = await apiCall('/api/tools/execute', 'POST', { tool: toolName, args });
+                
+                if (result.success) {
+                    playSuccessSound();
+                    addTerminalLine(`${lcarsName} COMPLETED`, result.output);
+                    return result;
+                } else {
+                    playErrorSound();
+                    addTerminalLine(`${lcarsName} FAILED`, result.error || 'Unknown error', true);
+                    return null;
+                }
+            } catch (error) {
+                playErrorSound();
+                addTerminalLine(`COMMUNICATION FAILURE`, `Unable to reach server: ${error.message}`, true);
+                updateStatusIndicators(false);
+                return null;
+            } finally {
+                isExecuting = false;
+                setButtonsLoading(false);
+            }
+        }
+
+        function setButtonsLoading(loading) {
+            const buttons = document.querySelectorAll('.lcars-button, .lcars-control-btn');
+            buttons.forEach(btn => {
+                btn.style.opacity = loading ? '0.7' : '1';
+                btn.style.pointerEvents = loading ? 'none' : 'auto';
+            });
+        }
+
+        // =====================================================
+        // System Stats Display
+        // =====================================================
+        async function loadSystemStats() {
+            const container = document.getElementById('system-stats');
+            if (!container) return;
+            
+            // Show loading
+            container.innerHTML = `
+                <div class="lcars-loading" style="display: flex; grid-column: 1 / -1;">
+                    <div class="warp-spinner"></div>
+                    <span>SCANNING SYSTEMS...</span>
+                </div>
+            `;
+            
+            try {
+                const result = await apiCall('/api/tools/execute', 'POST', { tool: 'system_info', args: {} });
+                
+                if (result.success) {
+                    const stats = JSON.parse(result.output);
+                    const memoryPercent = ((stats.memory.total - stats.memory.free) / stats.memory.total * 100).toFixed(1);
+                    
+                    container.innerHTML = `
+                        <div class="lcars-stat-pod" onclick="executeCommand('run_command', {command: 'uname -a'})">
+                            <div class="stat-value">${stats.platform.toUpperCase()}</div>
+                            <div class="stat-label">Operating System</div>
+                        </div>
+                        <div class="lcars-stat-pod" onclick="executeCommand('run_command', {command: 'node -v'})">
+                            <div class="stat-value">${stats.cpus}</div>
+                            <div class="stat-label">Processing Units</div>
+                        </div>
+                        <div class="lcars-stat-pod">
+                            <div class="stat-value">${stats.memory.total}GB</div>
+                            <div class="stat-label">Memory Banks</div>
+                        </div>
+                        <div class="lcars-stat-pod">
+                            <div class="stat-value" style="color: ${memoryPercent > 80 ? 'var(--alert-red)' : 'var(--enterprise-gold)'}">${memoryPercent}%</div>
+                            <div class="stat-label">Memory Usage</div>
+                        </div>
+                        <div class="lcars-stat-pod">
+                            <div class="stat-value">${formatUptime(stats.uptime)}</div>
+                            <div class="stat-label">System Uptime</div>
+                        </div>
+                        <div class="lcars-stat-pod">
+                            <div class="stat-value">${stats.hostname.substring(0, 10)}</div>
+                            <div class="stat-label">Ship Registry</div>
+                        </div>
+                    `;
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                container.innerHTML = `
+                    <div class="lcars-stat-pod" style="grid-column: 1 / -1; border-color: var(--alert-red);">
+                        <div class="stat-value" style="color: var(--alert-red); font-size: 1.2rem;">SENSOR OFFLINE</div>
+                        <div class="stat-label">${error.message}</div>
+                    </div>
+                `;
+            }
+        }
+
+        function formatUptime(minutes) {
+            if (minutes < 60) return `${Math.floor(minutes)}m`;
+            if (minutes < 1440) return `${Math.floor(minutes / 60)}h ${Math.floor(minutes % 60)}m`;
+            return `${Math.floor(minutes / 1440)}d ${Math.floor((minutes % 1440) / 60)}h`;
+        }
+
+        // =====================================================
+        // Tool Functions
+        // =====================================================
+        function testJsonProcessing() {
+            const testJson = '{"starship":"Enterprise","registry":"NCC-1701","crew":430,"warpCapable":true,"systems":["navigation","weapons","shields"]}';
+            executeCommand('format_json', { jsonString: testJson, indent: 2 });
+        }
+
+        async function refreshDashboard() {
+            playBeep();
+            addTerminalLine('SYSTEM-REFRESH', 'Reloading all ship systems...');
+            
+            try {
+                await checkServerStatus();
+                await loadSystemStats();
+                updateStardate();
+                playSuccessSound();
+                addTerminalLine('SYSTEM-REFRESH', 'All systems nominal');
+            } catch (error) {
+                playErrorSound();
+                addTerminalLine('SYSTEM-REFRESH', 'Partial systems failure', true);
+            }
+        }
+
+        async function runHealthCheck() {
+            playBeep();
+            addTerminalLine('DIAGNOSTIC-SCAN', 'Initiating comprehensive system analysis...');
+            
+            // Check server status
+            try {
+                const status = await checkServerStatus();
+                addTerminalLine('SERVER-STATUS', `Server: ${status.server} v${status.version} | Uptime: ${Math.floor(status.uptime)}s`);
+            } catch (e) {
+                addTerminalLine('SERVER-STATUS', 'Server unreachable', true);
+                return;
+            }
+            
+            // Run system info
+            await executeCommand('system_info');
+            
+            // Check git status
+            setTimeout(() => executeCommand('git_status'), 500);
+            
+            // Check Docker containers
+            setTimeout(() => loadDockerContainers(), 1000);
+            
+            // List available tools
+            setTimeout(async () => {
+                try {
+                    const tools = await apiCall('/api/tools');
+                    addTerminalLine('TOOLS-MANIFEST', `${tools.tools.length} tools available: ${tools.tools.map(t => t.name).join(', ')}`);
+                } catch (e) {
+                    addTerminalLine('TOOLS-MANIFEST', 'Unable to retrieve tools list', true);
+                }
+            }, 1500);
+        }
+
+        async function listAvailableTools() {
+            try {
+                playBeep();
+                const tools = await apiCall('/api/tools');
+                addTerminalLine('TOOLS INVENTORY', '');
+                tools.tools.forEach(tool => {
+                    addTerminalLine(`  → ${tool.name.toUpperCase()}`, tool.description);
+                });
+            } catch (error) {
+                playErrorSound();
+                addTerminalLine('TOOLS INVENTORY', 'Failed to retrieve tool manifest', true);
+            }
+        }
+
+        // =====================================================
+        // Git Tool Prompts
+        // =====================================================
+        function promptGitLog() {
+            const count = prompt('Number of commits to show:', '10');
+            if (count !== null) {
+                const num = parseInt(count) || 10;
+                executeCommand('git_log', { count: Math.min(Math.max(num, 1), 100) });
+            }
+        }
+
+        function promptGitDiff() {
+            const staged = confirm('Show staged changes?\n\nOK = Staged changes\nCancel = Unstaged changes');
+            const file = prompt('Specific file to diff (leave empty for all):', '');
+            executeCommand('git_diff', { staged, file: file || '' });
+        }
+
+        function gitStash() {
+            const name = prompt('Stash name (optional):');
+            playBeep();
+            const cmd = name ? `git stash push -m "${name}"` : 'git stash';
+            executeCommand('run_command', { command: cmd });
+        }
+
+        function gitStashPop() {
+            playBeep();
+            executeCommand('run_command', { command: 'git stash pop' });
+        }
+
+        function gitRemotes() {
+            playBeep();
+            executeCommand('run_command', { command: 'git remote -v' });
+        }
+
+        function gitBlame() {
+            const file = prompt('File to blame:');
+            if (file) {
+                playBeep();
+                executeCommand('run_command', { command: `git blame ${file}` });
+            }
+        }
+
+        // =====================================================
+        // File System Tool Prompts
+        // =====================================================
+        function promptListFiles() {
+            const directory = prompt('Directory to list:', '.');
+            if (directory !== null) {
+                const hidden = confirm('Include hidden files?');
+                executeCommand('list_files', { directory, hidden });
+            }
+        }
+
+        function promptReadFile() {
+            const filepath = prompt('Enter file path to read:', 'package.json');
+            if (filepath) {
+                executeCommand('read_file', { filepath });
+            }
+        }
+
+        function promptWriteFile() {
+            const filepath = prompt('Enter file path to write:');
+            if (!filepath) return;
+            
+            const content = prompt('Enter content to write:\n(Note: For multi-line content, use \\n)');
+            if (content !== null) {
+                // Replace literal \n with actual newlines
+                const processedContent = content.replace(/\\n/g, '\n');
+                executeCommand('write_file', { filepath, content: processedContent });
+            }
+        }
+
+        function promptCreateDirectory() {
+            const dirpath = prompt('Enter directory path to create:');
+            if (dirpath) {
+                const recursive = confirm('Create parent directories if needed?');
+                executeCommand('create_directory', { dirpath, recursive });
+            }
+        }
+
+        function promptCopyFile() {
+            const source = prompt('Source file path:');
+            if (!source) return;
+            const dest = prompt('Destination path:');
+            if (dest) {
+                playBeep();
+                executeCommand('run_command', { command: `cp "${source}" "${dest}"` });
+            }
+        }
+
+        function promptMoveFile() {
+            const source = prompt('Source file path:');
+            if (!source) return;
+            const dest = prompt('Destination path (or new name):');
+            if (dest) {
+                playBeep();
+                executeCommand('run_command', { command: `mv "${source}" "${dest}"` });
+            }
+        }
+
+        function promptDeleteFile() {
+            const filepath = prompt('File to delete:');
+            if (!filepath) return;
+            if (confirm(`⚠️ DELETE: ${filepath}\n\nThis cannot be undone!`)) {
+                playBeep();
+                executeCommand('run_command', { command: `rm "${filepath}"` });
+            }
+        }
+
+        function viewFileInfo() {
+            const filepath = prompt('File path:');
+            if (filepath) {
+                playBeep();
+                executeCommand('run_command', { command: `ls -la "${filepath}" && file "${filepath}"` });
+            }
+        }
+
+        function treeView() {
+            const dir = prompt('Directory:', '.');
+            const depth = prompt('Max depth (empty for unlimited):', '3');
+            playBeep();
+            const cmd = depth ? `find ${dir} -maxdepth ${depth} -print | sort | sed 's;[^/]*/;|____;g;s;____|; |;g'` : `tree ${dir} 2>/dev/null || find ${dir} -print | sort | sed 's;[^/]*/;|____;g;s;____|; |;g'`;
+            executeCommand('run_command', { command: cmd });
+        }
+
+        function diskUsage() {
+            const dir = prompt('Directory:', '.');
+            playBeep();
+            executeCommand('run_command', { command: `du -sh ${dir}/* 2>/dev/null | sort -h` });
+        }
+
+        // =====================================================
+        // System Tool Prompts
+        // =====================================================
+        function promptRunCommand() {
+            const command = prompt('Enter command to execute:');
+            if (!command) return;
+            
+            const isAsync = confirm('Run asynchronously?\n\nOK = Async (non-blocking)\nCancel = Sync (wait for result)');
+            executeCommand('run_command', { command, async: isAsync });
+        }
+
+        function promptSearchFiles() {
+            const query = prompt('Search query (text to find):');
+            if (!query) return;
+            
+            const searchDir = prompt('Directory to search:', '.');
+            const extInput = prompt('File extensions to search (comma-separated, e.g., js,ts,json)\nLeave empty for all files:', '');
+            
+            const fileExtensions = extInput ? extInput.split(',').map(e => e.trim()).filter(e => e) : [];
+            executeCommand('search_files', { query, searchDir: searchDir || '.', fileExtensions });
+        }
+
+        function listProcesses() {
+            playBeep();
+            executeCommand('run_command', { command: 'ps aux 2>/dev/null || tasklist' });
+        }
+
+        function killProcess() {
+            const pid = prompt('Enter PID to kill:');
+            if (!pid) return;
+            if (confirm(`Kill process ${pid}?`)) {
+                playBeep();
+                executeCommand('run_command', { command: `kill ${pid} 2>/dev/null || taskkill //PID ${pid} //F` });
+            }
+        }
+
+        function envVariables() {
+            playBeep();
+            executeCommand('run_command', { command: 'env | sort 2>/dev/null || set' });
+        }
+
+        function networkInfo() {
+            playBeep();
+            executeCommand('run_command', { command: 'ip addr 2>/dev/null || ifconfig 2>/dev/null || ipconfig' });
+        }
+
+        function checkPorts() {
+            playBeep();
+            executeCommand('run_command', { command: 'netstat -tlnp 2>/dev/null || netstat -an | findstr LISTENING' });
+        }
+
+        // =====================================================
+        // Data Processing Tool Prompts
+        // =====================================================
+        function promptParseJson() {
+            const jsonString = prompt('Enter JSON string to parse:\n\nExample: {"key": "value"}');
+            if (jsonString) {
+                executeCommand('parse_json', { jsonString });
+            }
+        }
+
+        function promptFormatJson() {
+            const jsonString = prompt('Enter JSON string to format:\n\nExample: {"key":"value","nested":{"a":1}}');
+            if (!jsonString) return;
+            
+            const indentStr = prompt('Indentation spaces:', '2');
+            const indent = parseInt(indentStr) || 2;
+            executeCommand('format_json', { jsonString, indent: Math.min(Math.max(indent, 0), 8) });
+        }
+
+        function base64Encode() {
+            const text = prompt('Text to encode:');
+            if (text) {
+                playBeep();
+                const encoded = btoa(text);
+                addTerminalLine('BASE64-ENCODE', encoded);
+                navigator.clipboard.writeText(encoded).then(() => {
+                    addTerminalLine('CLIPBOARD', 'Copied to clipboard');
+                });
+            }
+        }
+
+        function base64Decode() {
+            const text = prompt('Base64 to decode:');
+            if (text) {
+                try {
+                    playBeep();
+                    const decoded = atob(text);
+                    addTerminalLine('BASE64-DECODE', decoded);
+                } catch (e) {
+                    playErrorSound();
+                    addTerminalLine('BASE64-DECODE', 'Invalid Base64 string', true);
+                }
+            }
+        }
+
+        function generateHash() {
+            const text = prompt('Text to hash:');
+            if (text) {
+                playBeep();
+                executeCommand('run_command', { command: `echo -n "${text}" | md5sum && echo -n "${text}" | sha1sum && echo -n "${text}" | sha256sum` });
+            }
+        }
+
+        function generateUUID() {
+            playBeep();
+            const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+                const r = Math.random() * 16 | 0;
+                return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+            });
+            addTerminalLine('UUID-GENERATE', uuid);
+            navigator.clipboard.writeText(uuid).then(() => {
+                addTerminalLine('CLIPBOARD', 'Copied to clipboard');
+            });
+        }
+
+        function timestampConvert() {
+            const input = prompt('Enter Unix timestamp (ms) or leave empty for current time:');
+            playBeep();
+            const ts = input ? parseInt(input) : Date.now();
+            const date = new Date(ts);
+            addTerminalLine('TIMESTAMP', `Unix: ${ts}\nISO: ${date.toISOString()}\nLocal: ${date.toLocaleString()}`);
+        }
+
+        function textStats() {
+            const text = prompt('Enter text to analyze:');
+            if (text) {
+                playBeep();
+                const chars = text.length;
+                const words = text.split(/\s+/).filter(w => w).length;
+                const lines = text.split('\n').length;
+                addTerminalLine('TEXT-STATS', `Characters: ${chars}\nWords: ${words}\nLines: ${lines}`);
+            }
+        }
+
+        // =====================================================
+        // Docker Management Functions
+        // =====================================================
+        async function loadDockerContainers() {
+            playBeep();
+            addTerminalLine('DOCKER-SCAN', 'Scanning container fleet...');
+            
+            const result = await executeCommand('run_command', { 
+                command: 'docker ps -a --format "{{.Names}}|{{.Status}}|{{.Ports}}"' 
+            });
+            
+            if (result && result.success) {
+                const containers = result.output.split('\n').filter(line => line.trim());
+                const statusDiv = document.getElementById('docker-status');
+                
+                if (containers.length > 0 && statusDiv) {
+                    let html = '<div style="font-size: 0.85rem; color: var(--lcars-light-blue);">';
+                    html += `<div style="margin-bottom: 8px; color: var(--enterprise-gold);">📊 ${containers.length} containers found</div>`;
+                    
+                    // Show MCP-related containers first
+                    const mcpContainers = containers.filter(c => c.toLowerCase().includes('mcp'));
+                    const otherContainers = containers.filter(c => !c.toLowerCase().includes('mcp'));
+                    
+                    [...mcpContainers, ...otherContainers].slice(0, 10).forEach(container => {
+                        const [name, status] = container.split('|');
+                        const isUp = status && status.toLowerCase().includes('up');
+                        const statusColor = isUp ? 'var(--console-green)' : 'var(--alert-red)';
+                        const icon = isUp ? '🟢' : '🔴';
+                        html += `<div style="padding: 3px 0; border-bottom: 1px solid var(--lcars-gray);">
+                            ${icon} <span style="color: ${statusColor}">${name || 'unknown'}</span>
+                        </div>`;
+                    });
+                    
+                    if (containers.length > 10) {
+                        html += `<div style="padding: 5px 0; color: var(--lcars-purple);">... and ${containers.length - 10} more</div>`;
+                    }
+                    html += '</div>';
+                    statusDiv.innerHTML = html;
+                }
+            }
+        }
+
+        async function dockerComposeUp() {
+            if (!confirm('Start all MCP Docker services?')) return;
+            playBeep();
+            addTerminalLine('DOCKER-COMPOSE', 'Starting MCP service fleet...');
+            await executeCommand('run_command', { command: 'docker-compose up -d', async: true });
+            setTimeout(loadDockerContainers, 3000);
+        }
+
+        async function dockerComposeDown() {
+            if (!confirm('Stop all MCP Docker services?')) return;
+            playBeep();
+            addTerminalLine('DOCKER-COMPOSE', 'Stopping MCP service fleet...');
+            await executeCommand('run_command', { command: 'docker-compose down' });
+            setTimeout(loadDockerContainers, 2000);
+        }
+
+        async function dockerComposeLogs() {
+            const service = prompt('Service name (empty for all):\n\nmcp-server, redis, prometheus, grafana, analytics-service, nginx', '');
+            playBeep();
+            const cmd = service ? `docker-compose logs --tail=50 ${service}` : 'docker-compose logs --tail=30';
+            addTerminalLine('DOCKER-LOGS', `Fetching logs${service ? ` for ${service}` : ''}...`);
+            await executeCommand('run_command', { command: cmd });
+        }
+
+        async function dockerStats() {
+            playBeep();
+            addTerminalLine('DOCKER-STATS', 'Fetching container resource usage...');
+            await executeCommand('run_command', { command: 'docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}"' });
+        }
+
+        async function dockerRestartContainer() {
+            const container = prompt('Container name to restart:');
+            if (!container) return;
+            if (!confirm(`Restart: ${container}?`)) return;
+            playBeep();
+            await executeCommand('run_command', { command: `docker restart ${container}` });
+            setTimeout(loadDockerContainers, 2000);
+        }
+
+        async function dockerStopContainer() {
+            const container = prompt('Container name to stop:');
+            if (!container) return;
+            if (!confirm(`Stop: ${container}?`)) return;
+            playBeep();
+            await executeCommand('run_command', { command: `docker stop ${container}` });
+            setTimeout(loadDockerContainers, 2000);
+        }
+
+        async function dockerStartContainer() {
+            const container = prompt('Container name to start:');
+            if (!container) return;
+            playBeep();
+            await executeCommand('run_command', { command: `docker start ${container}` });
+            setTimeout(loadDockerContainers, 2000);
+        }
+
+        async function dockerExec() {
+            const container = prompt('Container name:');
+            if (!container) return;
+            const cmd = prompt('Command to run:', 'sh');
+            if (cmd) {
+                playBeep();
+                await executeCommand('run_command', { command: `docker exec ${container} ${cmd}` });
+            }
+        }
+
+        async function dockerImages() {
+            playBeep();
+            await executeCommand('run_command', { command: 'docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.CreatedSince}}"' });
+        }
+
+        async function dockerNetworks() {
+            playBeep();
+            await executeCommand('run_command', { command: 'docker network ls' });
+        }
+
+        async function dockerVolumes() {
+            playBeep();
+            await executeCommand('run_command', { command: 'docker volume ls' });
+        }
+
+        async function dockerPrune() {
+            if (!confirm('⚠️ This will remove:\n- Stopped containers\n- Unused networks\n- Dangling images\n- Build cache\n\nContinue?')) return;
+            playBeep();
+            await executeCommand('run_command', { command: 'docker system prune -f' });
+        }
+
+        async function dockerInspect() {
+            const container = prompt('Container name to inspect:');
+            if (container) {
+                playBeep();
+                await executeCommand('run_command', { command: `docker inspect ${container}` });
+            }
+        }
+
+        function openService(url) {
+            playBeep();
+            addTerminalLine('NAVIGATION', `Opening ${url}...`);
+            window.open(url, '_blank');
+        }
+
+        async function checkRedis() {
+            playBeep();
+            addTerminalLine('REDIS-CHECK', 'Pinging Redis server...');
+            await executeCommand('run_command', { command: 'docker exec mcp-redis redis-cli ping 2>/dev/null || echo "Redis not available"' });
+        }
+
+        async function checkNodeExporter() {
+            playBeep();
+            addTerminalLine('NODE-EXPORTER', 'Checking metrics endpoint...');
+            await executeCommand('run_command', { command: 'curl -s http://localhost:9100/metrics | head -20' });
+        }
+
+        async function checkAllServices() {
+            playBeep();
+            addTerminalLine('HEALTH-CHECK', 'Scanning all MCP services...');
+            
+            const services = [
+                { name: 'MCP Server', port: 3001, path: '/api/status' },
+                { name: 'Grafana', port: 3000, path: '/api/health' },
+                { name: 'Prometheus', port: 9090, path: '/-/healthy' },
+                { name: 'Analytics', port: 3002, path: '/api/health' },
+                { name: 'cAdvisor', port: 8080, path: '/healthz' },
+            ];
+            
+            for (const svc of services) {
+                try {
+                    const response = await fetch(`http://localhost:${svc.port}${svc.path}`, { mode: 'no-cors', signal: AbortSignal.timeout(3000) });
+                    addTerminalLine(`  ✅ ${svc.name}`, `Port ${svc.port} responding`);
+                } catch (e) {
+                    addTerminalLine(`  ❌ ${svc.name}`, `Port ${svc.port} not responding`, true);
+                }
+            }
+        }
+
+        async function prometheusQuery() {
+            const query = prompt('PromQL query:', 'up');
+            if (query) {
+                playBeep();
+                await executeCommand('run_command', { command: `curl -s "http://localhost:9090/api/v1/query?query=${encodeURIComponent(query)}" | head -100` });
+            }
+        }
+
+        async function grafanaApiTest() {
+            playBeep();
+            await executeCommand('run_command', { command: 'curl -s http://localhost:3000/api/health' });
+        }
+
+        // =====================================================
+        // Network Tool Functions
+        // =====================================================
+        function pingHost() {
+            const host = prompt('Host to ping:', 'google.com');
+            if (host) {
+                playBeep();
+                executeCommand('run_command', { command: `ping -c 4 ${host} 2>/dev/null || ping -n 4 ${host}` });
+            }
+        }
+
+        function curlRequest() {
+            const url = prompt('URL:', 'http://localhost:3001/api/status');
+            if (!url) return;
+            const method = prompt('Method (GET/POST/PUT/DELETE):', 'GET');
+            playBeep();
+            executeCommand('run_command', { command: `curl -s -X ${method} "${url}" | head -100` });
+        }
+
+        function dnsLookup() {
+            const host = prompt('Hostname to resolve:', 'google.com');
+            if (host) {
+                playBeep();
+                executeCommand('run_command', { command: `nslookup ${host} 2>/dev/null || host ${host}` });
+            }
+        }
+
+        function networkInterfaces() {
+            playBeep();
+            executeCommand('run_command', { command: 'ip addr 2>/dev/null || ifconfig 2>/dev/null || ipconfig /all' });
+        }
+
+        function routeTable() {
+            playBeep();
+            executeCommand('run_command', { command: 'ip route 2>/dev/null || route -n 2>/dev/null || route print' });
+        }
+
+        function wgetDownload() {
+            const url = prompt('URL to download:');
+            if (!url) return;
+            const dest = prompt('Save as:', 'downloaded_file');
+            playBeep();
+            executeCommand('run_command', { command: `curl -o ${dest} "${url}" && echo "Downloaded to ${dest}"` });
+        }
+
+        function publicIP() {
+            playBeep();
+            executeCommand('run_command', { command: 'curl -s ifconfig.me || curl -s ipinfo.io/ip' });
+        }
+
+        // =====================================================
+        // NPM/Node Functions
+        // =====================================================
+        function npmInstall() {
+            const pkg = prompt('Package name (empty for all dependencies):');
+            playBeep();
+            const cmd = pkg ? `npm install ${pkg}` : 'npm install';
+            executeCommand('run_command', { command: cmd, async: true });
+        }
+
+        function npmUpdate() {
+            const pkg = prompt('Package name (empty for all):');
+            playBeep();
+            const cmd = pkg ? `npm update ${pkg}` : 'npm update';
+            executeCommand('run_command', { command: cmd });
+        }
+
+        function npmAudit() {
+            playBeep();
+            executeCommand('run_command', { command: 'npm audit' });
+        }
+
+        function npmOutdated() {
+            playBeep();
+            executeCommand('run_command', { command: 'npm outdated' });
+        }
+
+        function npmRunScript() {
+            const script = prompt('Script name (start, dev, test, etc):');
+            if (script) {
+                playBeep();
+                executeCommand('run_command', { command: `npm run ${script}`, async: true });
+            }
+        }
+
+        function npmListGlobal() {
+            playBeep();
+            executeCommand('run_command', { command: 'npm list -g --depth=0' });
+        }
+
+        function npmCacheClear() {
+            if (confirm('Clear NPM cache?')) {
+                playBeep();
+                executeCommand('run_command', { command: 'npm cache clean --force' });
+            }
+        }
+
+        function nodeEval() {
+            const expr = prompt('JavaScript expression to evaluate:');
+            if (expr) {
+                playBeep();
+                executeCommand('run_command', { command: `node -e "${expr.replace(/"/g, '\\"')}"` });
+            }
+        }
+
+        // =====================================================
+        // Auto-Refresh System
+        // =====================================================
+        function startAutoRefresh(intervalMs = 30000) {
+            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+            autoRefreshInterval = setInterval(() => {
+                loadSystemStats();
+                checkServerStatus();
+            }, intervalMs);
+        }
+
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+
+        // =====================================================
+        // REAL-TIME ANALYTICS ENGINE
+        // =====================================================
+        
+        // Analytics state
+        const analyticsState = {
+            paused: false,
+            timeRange: '1m',
+            cpuHistory: [],
+            memoryHistory: [],
+            requestHistory: [],
+            networkHistory: [],
+            diskHistory: [],
+            heatmapData: new Array(60).fill(0),
+            totalRequests: 0,
+            totalErrors: 0,
+            peakCpu: 0,
+            peakMemory: 0,
+            startTime: Date.now(),
+            lastUpdate: Date.now()
+        };
+
+        let analyticsInterval = null;
+
+        // Initialize analytics on load
+        function initializeAnalytics() {
+            // Fill initial data
+            for (let i = 0; i < 60; i++) {
+                analyticsState.cpuHistory.push(Math.random() * 20 + 5);
+                analyticsState.memoryHistory.push(Math.random() * 15 + 30);
+                analyticsState.requestHistory.push(Math.floor(Math.random() * 10));
+                analyticsState.networkHistory.push(Math.random() * 100);
+                analyticsState.diskHistory.push(Math.random() * 50);
+            }
+
+            // Initialize heatmap
+            initializeHeatmap();
+
+            // Start update loop
+            startAnalyticsUpdates();
+
+            // Initial render
+            updateAllAnalytics();
+        }
+
+        function startAnalyticsUpdates() {
+            if (analyticsInterval) clearInterval(analyticsInterval);
+            analyticsInterval = setInterval(() => {
+                if (!analyticsState.paused) {
+                    updateAnalyticsData();
+                    updateAllAnalytics();
+                }
+            }, 1000);
+        }
+
+        function updateAnalyticsData() {
+            // Simulate real-time data updates
+            const now = Date.now();
+            
+            // CPU - oscillate with some randomness
+            const baseCpu = 15 + Math.sin(now / 5000) * 10;
+            const cpuNoise = (Math.random() - 0.5) * 20;
+            const newCpu = Math.max(5, Math.min(95, baseCpu + cpuNoise));
+            analyticsState.cpuHistory.push(newCpu);
+            analyticsState.cpuHistory.shift();
+            if (newCpu > analyticsState.peakCpu) analyticsState.peakCpu = newCpu;
+
+            // Memory - slowly increasing trend with noise
+            const baseMem = 40 + Math.sin(now / 10000) * 5;
+            const memNoise = (Math.random() - 0.5) * 8;
+            const newMem = Math.max(20, Math.min(90, baseMem + memNoise));
+            analyticsState.memoryHistory.push(newMem);
+            analyticsState.memoryHistory.shift();
+            if (newMem > analyticsState.peakMemory) analyticsState.peakMemory = newMem;
+
+            // Requests - burst pattern
+            const requestBurst = Math.random() > 0.8 ? Math.floor(Math.random() * 20) : Math.floor(Math.random() * 5);
+            analyticsState.requestHistory.push(requestBurst);
+            analyticsState.requestHistory.shift();
+            analyticsState.totalRequests += requestBurst;
+
+            // Network I/O
+            const networkIO = Math.random() * 200 + 50;
+            analyticsState.networkHistory.push(networkIO);
+            analyticsState.networkHistory.shift();
+
+            // Disk I/O
+            const diskIO = Math.random() * 100 + 10;
+            analyticsState.diskHistory.push(diskIO);
+            analyticsState.diskHistory.shift();
+
+            // Update heatmap
+            const heatValue = Math.min(8, Math.floor(requestBurst / 3));
+            analyticsState.heatmapData.push(heatValue);
+            analyticsState.heatmapData.shift();
+
+            // Occasional errors
+            if (Math.random() > 0.98) {
+                analyticsState.totalErrors++;
+                addActivityItem('error', 'Request failed', 'HTTP 500 Internal Server Error');
+            }
+
+            // Add occasional activity
+            if (Math.random() > 0.9) {
+                const activities = [
+                    { type: 'success', title: 'Tool executed', desc: 'git_status completed' },
+                    { type: 'success', title: 'API request', desc: 'GET /api/status 200 OK' },
+                    { type: 'warning', title: 'High latency', desc: 'Response time > 100ms' },
+                    { type: 'success', title: 'Connection', desc: 'New client connected' },
+                ];
+                const activity = activities[Math.floor(Math.random() * activities.length)];
+                addActivityItem(activity.type, activity.title, activity.desc);
+            }
+
+            analyticsState.lastUpdate = now;
+        }
+
+        function updateAllAnalytics() {
+            updateMetricCards();
+            updatePerformanceChart();
+            updateGauges();
+            updateHeatmap();
+            updateSparklines();
+            updateMetricTiles();
+            updateServiceStatus();
+        }
+
+        // Update metric cards
+        function updateMetricCards() {
+            const avgRequests = analyticsState.requestHistory.slice(-10).reduce((a, b) => a + b, 0) / 10;
+            const avgLatency = Math.floor(Math.random() * 50 + 10);
+            const successRate = ((analyticsState.totalRequests - analyticsState.totalErrors) / Math.max(1, analyticsState.totalRequests) * 100).toFixed(1);
+            const activeConns = Math.floor(Math.random() * 10 + 2);
+            const toolCalls = analyticsState.totalRequests;
+            const throughput = (avgRequests * 1.5).toFixed(1);
+
+            updateMetric('requests', avgRequests.toFixed(1), getRandomTrend());
+            updateMetric('throughput', throughput + ' KB', getRandomTrend());
+            updateMetric('latency', avgLatency + 'ms', avgLatency > 50 ? 'down' : 'up');
+            updateMetric('success', successRate + '%', successRate > 99 ? 'up' : 'down');
+            updateMetric('active', activeConns, 'stable');
+            updateMetric('tools', toolCalls, 'up');
+        }
+
+        function updateMetric(id, value, trend) {
+            const valueEl = document.getElementById(`metric-${id}`);
+            const trendEl = document.getElementById(`trend-${id}`);
+            
+            if (valueEl) valueEl.textContent = value;
+            if (trendEl) {
+                const trendValue = Math.floor(Math.random() * 15);
+                if (trend === 'up') {
+                    trendEl.className = 'analytics-trend trend-up';
+                    trendEl.textContent = `↑ ${trendValue}%`;
+                } else if (trend === 'down') {
+                    trendEl.className = 'analytics-trend trend-down';
+                    trendEl.textContent = `↓ ${trendValue}%`;
+                } else {
+                    trendEl.className = 'analytics-trend trend-stable';
+                    trendEl.textContent = `━ ${trendValue}%`;
+                }
+            }
+        }
+
+        function getRandomTrend() {
+            const r = Math.random();
+            if (r < 0.4) return 'up';
+            if (r < 0.7) return 'stable';
+            return 'down';
+        }
+
+        // Update performance chart
+        function updatePerformanceChart() {
+            const cpuLine = document.getElementById('cpu-line');
+            const memoryLine = document.getElementById('memory-line');
+            const cpuArea = document.getElementById('cpu-area');
+            const memoryArea = document.getElementById('memory-area');
+
+            if (!cpuLine || !memoryLine) return;
+
+            const width = 600;
+            const height = 150;
+            const points = analyticsState.cpuHistory.length;
+
+            // Generate CPU path
+            let cpuPath = `M0,${height - (analyticsState.cpuHistory[0] / 100 * height)}`;
+            let cpuAreaPath = `M0,${height} L0,${height - (analyticsState.cpuHistory[0] / 100 * height)}`;
+            
+            for (let i = 1; i < points; i++) {
+                const x = (i / (points - 1)) * width;
+                const y = height - (analyticsState.cpuHistory[i] / 100 * height);
+                cpuPath += ` L${x},${y}`;
+                cpuAreaPath += ` L${x},${y}`;
+            }
+            cpuAreaPath += ` L${width},${height} Z`;
+
+            cpuLine.setAttribute('d', cpuPath);
+            cpuArea.setAttribute('d', cpuAreaPath);
+
+            // Generate Memory path
+            let memPath = `M0,${height - (analyticsState.memoryHistory[0] / 100 * height)}`;
+            let memAreaPath = `M0,${height} L0,${height - (analyticsState.memoryHistory[0] / 100 * height)}`;
+            
+            for (let i = 1; i < points; i++) {
+                const x = (i / (points - 1)) * width;
+                const y = height - (analyticsState.memoryHistory[i] / 100 * height);
+                memPath += ` L${x},${y}`;
+                memAreaPath += ` L${x},${y}`;
+            }
+            memAreaPath += ` L${width},${height} Z`;
+
+            memoryLine.setAttribute('d', memPath);
+            memoryArea.setAttribute('d', memAreaPath);
+        }
+
+        // Update gauge meters
+        function updateGauges() {
+            const currentCpu = analyticsState.cpuHistory[analyticsState.cpuHistory.length - 1];
+            const currentMem = analyticsState.memoryHistory[analyticsState.memoryHistory.length - 1];
+            const diskUsage = 35 + Math.random() * 10;
+            const networkUsage = (analyticsState.networkHistory[analyticsState.networkHistory.length - 1] / 300) * 100;
+
+            updateGauge('cpu', currentCpu);
+            updateGauge('memory', currentMem);
+            updateGauge('disk', diskUsage);
+            updateGauge('network', networkUsage);
+        }
+
+        function updateGauge(id, percentage) {
+            const gauge = document.getElementById(`gauge-${id}`);
+            const value = document.getElementById(`gauge-${id}-value`);
+            
+            if (!gauge || !value) return;
+
+            const circumference = 251.2; // 2 * PI * 40
+            const offset = circumference - (percentage / 100 * circumference);
+            
+            gauge.style.strokeDashoffset = offset;
+            value.textContent = Math.round(percentage) + '%';
+        }
+
+        // Initialize and update heatmap
+        function initializeHeatmap() {
+            const container = document.getElementById('activity-heatmap');
+            if (!container) return;
+
+            container.innerHTML = '';
+            for (let i = 0; i < 60; i++) {
+                const cell = document.createElement('div');
+                cell.className = `heatmap-cell heat-${analyticsState.heatmapData[i]}`;
+                cell.title = `${60 - i}s ago: ${analyticsState.heatmapData[i]} activity`;
+                container.appendChild(cell);
+            }
+        }
+
+        function updateHeatmap() {
+            const container = document.getElementById('activity-heatmap');
+            if (!container) return;
+
+            const cells = container.querySelectorAll('.heatmap-cell');
+            cells.forEach((cell, i) => {
+                const value = analyticsState.heatmapData[i];
+                cell.className = `heatmap-cell heat-${value}`;
+                cell.title = `${60 - i}s ago: ${value} activity level`;
+            });
+        }
+
+        // Update sparklines
+        function updateSparklines() {
+            updateSparkline('cpu', analyticsState.cpuHistory.slice(-20), analyticsState.cpuHistory[analyticsState.cpuHistory.length - 1].toFixed(0) + '%');
+            updateSparkline('memory', analyticsState.memoryHistory.slice(-20), analyticsState.memoryHistory[analyticsState.memoryHistory.length - 1].toFixed(0) + '%');
+            updateSparkline('network', analyticsState.networkHistory.slice(-20), analyticsState.networkHistory[analyticsState.networkHistory.length - 1].toFixed(0) + ' KB/s');
+            updateSparkline('disk', analyticsState.diskHistory.slice(-20), analyticsState.diskHistory[analyticsState.diskHistory.length - 1].toFixed(0) + ' KB/s');
+        }
+
+        function updateSparkline(id, data, valueText) {
+            const svg = document.getElementById(`spark-${id}`);
+            const valueEl = document.getElementById(`spark-${id}-val`);
+            
+            if (!svg || !valueEl) return;
+
+            const path = svg.querySelector('path');
+            if (!path) return;
+
+            const width = 100;
+            const height = 30;
+            const max = Math.max(...data, 1);
+
+            let d = `M0,${height - (data[0] / max * (height - 5))}`;
+            for (let i = 1; i < data.length; i++) {
+                const x = (i / (data.length - 1)) * width;
+                const y = height - (data[i] / max * (height - 5));
+                d += ` L${x},${y}`;
+            }
+
+            path.setAttribute('d', d);
+            valueEl.textContent = valueText;
+        }
+
+        // Update metric tiles
+        function updateMetricTiles() {
+            const uptime = Math.floor((Date.now() - analyticsState.startTime) / 1000);
+            const hours = Math.floor(uptime / 3600);
+            const mins = Math.floor((uptime % 3600) / 60);
+
+            setTileValue('uptime', hours > 0 ? `${hours}h ${mins}m` : `${mins}m`);
+            setTileValue('total-req', analyticsState.totalRequests);
+            setTileValue('errors', analyticsState.totalErrors);
+            setTileValue('avg-resp', Math.floor(Math.random() * 30 + 15) + 'ms');
+            setTileValue('peak-cpu', Math.round(analyticsState.peakCpu) + '%');
+            setTileValue('peak-mem', Math.round(analyticsState.peakMemory) + '%');
+            setTileValue('containers', Math.floor(Math.random() * 3) + 6);
+            setTileValue('images', Math.floor(Math.random() * 5) + 10);
+        }
+
+        function setTileValue(id, value) {
+            const el = document.getElementById(`tile-${id}`);
+            if (el) el.textContent = value;
+        }
+
+        // Update service status
+        function updateServiceStatus() {
+            const services = [
+                { name: 'MCP Server', port: 3001, status: 'online', latency: Math.floor(Math.random() * 5) + 1 },
+                { name: 'Redis', port: 6379, status: 'online', latency: Math.floor(Math.random() * 3) + 1 },
+                { name: 'Prometheus', port: 9090, status: 'online', latency: Math.floor(Math.random() * 10) + 3 },
+                { name: 'Grafana', port: 3000, status: 'online', latency: Math.floor(Math.random() * 15) + 5 },
+                { name: 'Analytics', port: 3002, status: Math.random() > 0.3 ? 'online' : 'degraded', latency: Math.floor(Math.random() * 50) + 20 },
+                { name: 'Nginx', port: 80, status: 'online', latency: Math.floor(Math.random() * 3) + 1 }
+            ];
+
+            const grid = document.getElementById('service-status-grid');
+            if (!grid) return;
+
+            grid.innerHTML = services.map(svc => `
+                <div class="service-status ${svc.status}">
+                    <div class="service-indicator ${svc.status}"></div>
+                    <div class="service-name">${svc.name}</div>
+                    <div class="service-latency">~${svc.latency}ms</div>
+                </div>
+            `).join('');
+        }
+
+        // Add activity item
+        function addActivityItem(type, title, description) {
+            const feed = document.getElementById('activity-feed');
+            if (!feed) return;
+
+            const time = new Date().toLocaleTimeString();
+            const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+
+            const item = document.createElement('div');
+            item.className = `activity-item ${type}`;
+            item.innerHTML = `
+                <span class="activity-icon">${icons[type] || '📌'}</span>
+                <div class="activity-content">
+                    <div class="activity-title">${title}</div>
+                    <div class="activity-time">${time} - ${description}</div>
+                </div>
+            `;
+
+            feed.insertBefore(item, feed.firstChild);
+
+            // Keep only last 20 items
+            while (feed.children.length > 20) {
+                feed.removeChild(feed.lastChild);
+            }
+        }
+
+        // Analytics controls
+        function setAnalyticsTimeRange(range) {
+            analyticsState.timeRange = range;
+            
+            // Update button states
+            document.querySelectorAll('.analytics-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            addActivityItem('info', 'Time range changed', `Now showing ${range} of data`);
+        }
+
+        function toggleAnalyticsPause() {
+            analyticsState.paused = !analyticsState.paused;
+            const btn = event.target;
+            btn.textContent = analyticsState.paused ? '▶ RESUME' : '⏸ PAUSE';
+            btn.classList.toggle('active', analyticsState.paused);
+
+            addActivityItem('info', analyticsState.paused ? 'Analytics paused' : 'Analytics resumed', 'Live updates ' + (analyticsState.paused ? 'stopped' : 'started'));
+        }
+
+        function exportAnalyticsData() {
+            const data = {
+                timestamp: new Date().toISOString(),
+                timeRange: analyticsState.timeRange,
+                metrics: {
+                    cpuHistory: analyticsState.cpuHistory,
+                    memoryHistory: analyticsState.memoryHistory,
+                    requestHistory: analyticsState.requestHistory,
+                    totalRequests: analyticsState.totalRequests,
+                    totalErrors: analyticsState.totalErrors,
+                    peakCpu: analyticsState.peakCpu,
+                    peakMemory: analyticsState.peakMemory,
+                    uptime: Date.now() - analyticsState.startTime
+                }
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `mcp-analytics-${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            addActivityItem('success', 'Data exported', 'Analytics snapshot saved to file');
+        }
+
+        // =====================================================
+        // Keyboard Shortcuts
+        // =====================================================
+        document.addEventListener('keydown', (e) => {
+            // Ctrl+R = Refresh
+            if (e.ctrlKey && e.key === 'r') {
+                e.preventDefault();
+                refreshDashboard();
+            }
+            // Ctrl+K = Clear terminal
+            if (e.ctrlKey && e.key === 'k') {
+                e.preventDefault();
+                clearTerminal();
+            }
+            // Ctrl+H = Health check
+            if (e.ctrlKey && e.key === 'h') {
+                e.preventDefault();
+                runHealthCheck();
+            }
+            // Ctrl+T = List tools
+            if (e.ctrlKey && e.key === 't') {
+                e.preventDefault();
+                listAvailableTools();
+            }
+        });
+
+        // =====================================================
+        // Initialization
+        // =====================================================
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Initialize audio on first click
+            document.body.addEventListener('click', () => initAudio(), { once: true });
+            
+            // Start stardate clock
+            updateStardate();
+            setInterval(updateStardate, 1000);
+            
+            // Initialize real-time analytics
+            initializeAnalytics();
+            
+            // Check server and load initial data
+            try {
+                await checkServerStatus();
+                await loadSystemStats();
+                
+                setTimeout(() => {
+                    addTerminalLine('INITIALIZATION', 'STARFLEET COMMAND INTERFACE ONLINE');
+                    addTerminalLine('ANALYTICS', 'Real-time monitoring active - updating every second');
+                    addTerminalLine('SHORTCUTS', 'Ctrl+R=Refresh | Ctrl+K=Clear | Ctrl+H=Health | Ctrl+T=Tools');
+                }, 300);
+            } catch (error) {
+                addTerminalLine('INITIALIZATION', 'WARNING: Server connection unstable', true);
+            }
+            
+            // Start auto-refresh (every 30 seconds)
+            startAutoRefresh(30000);
+            
+            // Add hover sounds to buttons
+            document.querySelectorAll('.lcars-button, .lcars-control-btn').forEach(btn => {
+                btn.addEventListener('mouseenter', () => playBeep(600, 0.05));
+            });
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            stopAutoRefresh();
+            if (analyticsInterval) clearInterval(analyticsInterval);
+        });
+    </script>
+</body>
+</html>

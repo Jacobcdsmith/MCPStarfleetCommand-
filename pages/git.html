@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git Operations - STARFLEET COMMAND</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/pages/shared/lcars-styles.css">
+</head>
+<body>
+    <div class="lcars-container">
+        <!-- Header -->
+        <div class="lcars-header">
+            <div class="header-left">
+                <a href="/pages/index.html" class="back-btn">← BACK</a>
+                <div>
+                    <h1 class="page-title">🔀 Git Operations</h1>
+                    <p class="page-subtitle">Version Control Management System</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="status-badge">
+                    <div class="status-dot"></div>
+                    <span class="status-text">ONLINE</span>
+                </div>
+                <span id="stardate" class="stardate"></span>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="lcars-panel">
+            <div class="panel-header">
+                <span class="panel-icon">⚡</span>
+                <h2 class="panel-title">Quick Actions</h2>
+            </div>
+            <div class="panel-content">
+                <div class="quick-actions">
+                    <button class="lcars-btn primary" onclick="gitStatus()">📊 Status</button>
+                    <button class="lcars-btn" onclick="gitLog(10)">📜 Recent Commits</button>
+                    <button class="lcars-btn" onclick="gitBranches()">🌿 Branches</button>
+                    <button class="lcars-btn" onclick="gitDiff()">📝 Diff</button>
+                    <button class="lcars-btn" onclick="gitRemotes()">🌐 Remotes</button>
+                    <button class="lcars-btn success" onclick="gitPull()">⬇️ Pull</button>
+                    <button class="lcars-btn danger" onclick="gitReset()">↩️ Reset</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="two-column">
+            <!-- Git Status Panel -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">📊</span>
+                    <h2 class="panel-title">Repository Status</h2>
+                </div>
+                <div class="panel-content">
+                    <button class="lcars-btn" onclick="gitStatus()" style="margin-bottom: 15px;">Refresh Status</button>
+                    <div id="status-output">
+                        <div class="terminal-output">Click "Refresh Status" to view repository state...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Git Log Panel -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">📜</span>
+                    <h2 class="panel-title">Commit History</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="form-group">
+                        <label class="form-label">Number of Commits</label>
+                        <input type="number" id="log-count" class="lcars-input" value="10" min="1" max="100">
+                    </div>
+                    <button class="lcars-btn" onclick="gitLogCustom()">View History</button>
+                    <div id="log-output" style="margin-top: 15px;">
+                        <div class="terminal-output">Enter commit count and click "View History"...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="two-column">
+            <!-- Git Diff Panel -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">📝</span>
+                    <h2 class="panel-title">File Differences</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="form-group">
+                        <label class="form-label">File Path (optional)</label>
+                        <input type="text" id="diff-file" class="lcars-input" placeholder="Leave empty for all changes">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" id="diff-staged"> Show staged changes only
+                        </label>
+                    </div>
+                    <button class="lcars-btn" onclick="gitDiffCustom()">Show Diff</button>
+                    <div id="diff-output" style="margin-top: 15px;">
+                        <div class="terminal-output">Configure options and click "Show Diff"...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Git Branch Panel -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">🌿</span>
+                    <h2 class="panel-title">Branch Management</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="quick-actions" style="margin-bottom: 15px;">
+                        <button class="lcars-btn" onclick="gitBranches()">List All</button>
+                        <button class="lcars-btn" onclick="gitCurrentBranch()">Current</button>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Create New Branch</label>
+                        <input type="text" id="new-branch" class="lcars-input" placeholder="branch-name">
+                    </div>
+                    <button class="lcars-btn success" onclick="gitCreateBranch()">Create Branch</button>
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label class="form-label">Switch to Branch</label>
+                        <input type="text" id="switch-branch" class="lcars-input" placeholder="branch-name">
+                    </div>
+                    <button class="lcars-btn" onclick="gitSwitchBranch()">Switch Branch</button>
+                    <div id="branch-output" style="margin-top: 15px;">
+                        <div class="terminal-output">Branch operations output will appear here...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="two-column">
+            <!-- Git Stash Panel -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">📦</span>
+                    <h2 class="panel-title">Stash Management</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="quick-actions" style="margin-bottom: 15px;">
+                        <button class="lcars-btn" onclick="gitStashList()">List Stashes</button>
+                        <button class="lcars-btn success" onclick="gitStashPush()">Stash Changes</button>
+                        <button class="lcars-btn primary" onclick="gitStashPop()">Pop Stash</button>
+                        <button class="lcars-btn danger" onclick="gitStashDrop()">Drop Stash</button>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Stash Message (optional)</label>
+                        <input type="text" id="stash-message" class="lcars-input" placeholder="WIP: description">
+                    </div>
+                    <div id="stash-output">
+                        <div class="terminal-output">Stash operations output will appear here...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Git Remote Panel -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">🌐</span>
+                    <h2 class="panel-title">Remote Repositories</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="quick-actions" style="margin-bottom: 15px;">
+                        <button class="lcars-btn" onclick="gitRemotes()">List Remotes</button>
+                        <button class="lcars-btn" onclick="gitFetch()">Fetch All</button>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Add Remote</label>
+                        <input type="text" id="remote-name" class="lcars-input" placeholder="origin" style="margin-bottom: 10px;">
+                        <input type="text" id="remote-url" class="lcars-input" placeholder="https://github.com/user/repo.git">
+                    </div>
+                    <button class="lcars-btn success" onclick="gitAddRemote()">Add Remote</button>
+                    <div id="remote-output" style="margin-top: 15px;">
+                        <div class="terminal-output">Remote operations output will appear here...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Git Blame Panel -->
+        <div class="lcars-panel">
+            <div class="panel-header">
+                <span class="panel-icon">🔍</span>
+                <h2 class="panel-title">Git Blame - Line History</h2>
+            </div>
+            <div class="panel-content">
+                <div class="form-group">
+                    <label class="form-label">File Path</label>
+                    <input type="text" id="blame-file" class="lcars-input" placeholder="path/to/file.js">
+                </div>
+                <button class="lcars-btn" onclick="gitBlame()">Show Blame</button>
+                <div id="blame-output" style="margin-top: 15px;">
+                    <div class="terminal-output">Enter a file path and click "Show Blame" to see line-by-line authorship...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="lcars-footer">
+            <p class="footer-text">STARFLEET COMMAND • Git Operations Module • LCARS Interface</p>
+        </div>
+    </div>
+
+    <script src="/pages/shared/lcars-core.js"></script>
+    <script>
+        // Git Status
+        async function gitStatus() {
+            await runTool('git_status', {}, 'status-output');
+        }
+
+        // Git Log
+        async function gitLog(count = 10) {
+            await runTool('git_log', { count }, 'log-output');
+        }
+
+        async function gitLogCustom() {
+            const count = parseInt(document.getElementById('log-count').value) || 10;
+            await gitLog(count);
+        }
+
+        // Git Diff
+        async function gitDiff() {
+            await runTool('run_command', { command: 'git diff' }, 'diff-output');
+        }
+
+        async function gitDiffCustom() {
+            const file = document.getElementById('diff-file').value;
+            const staged = document.getElementById('diff-staged').checked;
+            await runTool('git_diff', { file, staged }, 'diff-output');
+        }
+
+        // Git Branches
+        async function gitBranches() {
+            await runTool('git_branch', {}, 'branch-output');
+        }
+
+        async function gitCurrentBranch() {
+            await runTool('run_command', { command: 'git branch --show-current' }, 'branch-output');
+        }
+
+        async function gitCreateBranch() {
+            const name = document.getElementById('new-branch').value;
+            if (!name) {
+                alert('Please enter a branch name');
+                return;
+            }
+            await runTool('run_command', { command: `git branch ${name}` }, 'branch-output');
+        }
+
+        async function gitSwitchBranch() {
+            const name = document.getElementById('switch-branch').value;
+            if (!name) {
+                alert('Please enter a branch name');
+                return;
+            }
+            await runTool('run_command', { command: `git checkout ${name}` }, 'branch-output');
+        }
+
+        // Git Stash
+        async function gitStashList() {
+            await runTool('run_command', { command: 'git stash list' }, 'stash-output');
+        }
+
+        async function gitStashPush() {
+            const message = document.getElementById('stash-message').value;
+            const cmd = message ? `git stash push -m "${message}"` : 'git stash push';
+            await runTool('run_command', { command: cmd }, 'stash-output');
+        }
+
+        async function gitStashPop() {
+            await runTool('run_command', { command: 'git stash pop' }, 'stash-output');
+        }
+
+        async function gitStashDrop() {
+            if (!confirm('Are you sure you want to drop the latest stash?')) return;
+            await runTool('run_command', { command: 'git stash drop' }, 'stash-output');
+        }
+
+        // Git Remotes
+        async function gitRemotes() {
+            await runTool('run_command', { command: 'git remote -v' }, 'remote-output');
+        }
+
+        async function gitFetch() {
+            await runTool('run_command', { command: 'git fetch --all' }, 'remote-output');
+        }
+
+        async function gitAddRemote() {
+            const name = document.getElementById('remote-name').value || 'origin';
+            const url = document.getElementById('remote-url').value;
+            if (!url) {
+                alert('Please enter a remote URL');
+                return;
+            }
+            await runTool('run_command', { command: `git remote add ${name} ${url}` }, 'remote-output');
+        }
+
+        // Git Pull/Reset
+        async function gitPull() {
+            await runTool('run_command', { command: 'git pull' }, 'status-output');
+        }
+
+        async function gitReset() {
+            if (!confirm('This will reset your working directory. Continue?')) return;
+            await runTool('run_command', { command: 'git reset --hard HEAD' }, 'status-output');
+        }
+
+        // Git Blame
+        async function gitBlame() {
+            const file = document.getElementById('blame-file').value;
+            if (!file) {
+                alert('Please enter a file path');
+                return;
+            }
+            await runTool('run_command', { command: `git blame ${file}` }, 'blame-output');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            gitStatus();
+        });
+    </script>
+</body>
+</html>

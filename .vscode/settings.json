@@ -1,0 +1,71 @@
+{
+  // Editor settings
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": false,
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "explicit"
+  },
+  
+  // File associations
+  "files.associations": {
+    "*.mcp": "json",
+    "server.js": "javascript"
+  },
+  
+  // Node.js specific settings
+  "typescript.preferences.includePackageJsonAutoImports": "auto",
+  "javascript.preferences.includePackageJsonAutoImports": "auto",
+  "javascript.suggest.autoImports": true,
+  "typescript.suggest.autoImports": true,
+  
+  // Terminal settings
+  "terminal.integrated.defaultProfile.windows": "Git Bash",
+  "terminal.integrated.env.windows": {
+    "DEBUG": "1"
+  },
+  
+  // Search settings
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/package-lock.json": true,
+    "**/.vscode": false
+  },
+  
+  // File explorer settings
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.patterns": {
+    "package.json": "package-lock.json, yarn.lock, pnpm-lock.yaml",
+    "*.js": "*.js.map, *.min.js",
+    "*.html": "*.css"
+  },
+  
+  // JSON settings for MCP configurations
+  "json.schemas": [
+    {
+      "fileMatch": ["*.mcp"],
+      "url": "https://raw.githubusercontent.com/modelcontextprotocol/specification/main/schema/mcp.json"
+    }
+  ],
+  
+  // Git settings
+  "git.enableSmartCommit": true,
+  "git.confirmSync": false,
+  "git.autofetch": true,
+  
+  // Extension specific settings
+  "emmet.includeLanguages": {
+    "javascript": "javascriptreact"
+  },
+  
+  // Error lens settings
+  "errorLens.enabledDiagnosticLevels": ["error", "warning"],
+  "errorLens.excludeBySource": ["eslint(no-unused-vars)"],
+  
+  // Auto-save
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1000
+}

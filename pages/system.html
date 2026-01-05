@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Operations - STARFLEET COMMAND</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/pages/shared/lcars-styles.css">
+    <style>
+        .process-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Rajdhani', monospace;
+            font-size: 0.9rem;
+        }
+
+        .process-table th,
+        .process-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid rgba(85,85,255,0.3);
+        }
+
+        .process-table th {
+            background: rgba(0,50,100,0.5);
+            color: var(--enterprise-gold);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .process-table tr:hover {
+            background: rgba(0,100,150,0.3);
+        }
+
+        .system-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(0,80,120,0.4) 0%, rgba(0,40,80,0.6) 100%);
+            border: 2px solid var(--lcars-blue);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-card-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: var(--enterprise-gold);
+            text-shadow: 0 0 10px var(--enterprise-gold);
+        }
+
+        .stat-card-label {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.85rem;
+            color: var(--lcars-light-blue);
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+
+        .env-var {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(85,85,255,0.2);
+        }
+
+        .env-var:hover {
+            background: rgba(0,100,150,0.2);
+        }
+
+        .env-key {
+            color: var(--enterprise-gold);
+            font-weight: 600;
+        }
+
+        .env-value {
+            color: var(--console-green);
+            max-width: 400px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="lcars-container">
+        <!-- Header -->
+        <div class="lcars-header">
+            <div class="header-left">
+                <a href="/pages/index.html" class="back-btn">← BACK</a>
+                <div>
+                    <h1 class="page-title">💻 System Operations</h1>
+                    <p class="page-subtitle">System Management & Monitoring</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="status-badge">
+                    <div class="status-dot"></div>
+                    <span class="status-text">ONLINE</span>
+                </div>
+                <span id="stardate" class="stardate"></span>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="lcars-panel">
+            <div class="panel-header">
+                <span class="panel-icon">⚡</span>
+                <h2 class="panel-title">Quick Actions</h2>
+            </div>
+            <div class="panel-content">
+                <div class="quick-actions">
+                    <button class="lcars-btn primary" onclick="getSystemInfo()">💻 System Info</button>
+                    <button class="lcars-btn" onclick="listProcesses()">📊 Processes</button>
+                    <button class="lcars-btn" onclick="memoryUsage()">🧠 Memory</button>
+                    <button class="lcars-btn" onclick="diskSpace()">💾 Disk Space</button>
+                    <button class="lcars-btn" onclick="networkInfo()">🌐 Network</button>
+                    <button class="lcars-btn" onclick="activePorts()">🔌 Ports</button>
+                    <button class="lcars-btn" onclick="envVariables()">🔧 Env Vars</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Stats -->
+        <div class="lcars-panel">
+            <div class="panel-header">
+                <span class="panel-icon">📈</span>
+                <h2 class="panel-title">System Statistics</h2>
+            </div>
+            <div class="panel-content">
+                <div class="system-stats-grid" id="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-card-value" id="stat-platform">-</div>
+                        <div class="stat-card-label">Platform</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-value" id="stat-cpus">-</div>
+                        <div class="stat-card-label">CPU Cores</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-value" id="stat-memory">-</div>
+                        <div class="stat-card-label">Memory</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-value" id="stat-uptime">-</div>
+                        <div class="stat-card-label">Uptime</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-value" id="stat-load">-</div>
+                        <div class="stat-card-label">Load Avg</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-value" id="stat-hostname">-</div>
+                        <div class="stat-card-label">Hostname</div>
+                    </div>
+                </div>
+                <button class="lcars-btn" onclick="refreshStats()">🔄 Refresh Stats</button>
+            </div>
+        </div>
+
+        <!-- Command Execution -->
+        <div class="lcars-panel">
+            <div class="panel-header">
+                <span class="panel-icon">⌨️</span>
+                <h2 class="panel-title">Command Execution</h2>
+            </div>
+            <div class="panel-content">
+                <div class="form-group">
+                    <label class="form-label">Enter Command</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="command-input" class="lcars-input" placeholder="ls -la" style="flex: 1;">
+                        <button class="lcars-btn primary" onclick="runCommand()">Execute</button>
+                    </div>
+                </div>
+                <div class="quick-actions" style="margin: 15px 0;">
+                    <button class="lcars-btn" onclick="setCommand('pwd')">pwd</button>
+                    <button class="lcars-btn" onclick="setCommand('whoami')">whoami</button>
+                    <button class="lcars-btn" onclick="setCommand('date')">date</button>
+                    <button class="lcars-btn" onclick="setCommand('uptime')">uptime</button>
+                    <button class="lcars-btn" onclick="setCommand('df -h')">df -h</button>
+                    <button class="lcars-btn" onclick="setCommand('free -h')">free -h</button>
+                </div>
+                <div id="command-output">
+                    <div class="terminal-output">Command output will appear here...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="two-column">
+            <!-- Process Management -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">📊</span>
+                    <h2 class="panel-title">Process Management</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="quick-actions" style="margin-bottom: 15px;">
+                        <button class="lcars-btn" onclick="listProcesses()">All Processes</button>
+                        <button class="lcars-btn" onclick="topProcesses()">Top CPU</button>
+                        <button class="lcars-btn" onclick="topMemory()">Top Memory</button>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Kill Process (PID)</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="number" id="kill-pid" class="lcars-input" placeholder="PID">
+                            <button class="lcars-btn danger" onclick="killProcess()">Kill</button>
+                            <button class="lcars-btn danger" onclick="killProcess(true)">Force Kill</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Search Process</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="process-search" class="lcars-input" placeholder="process name">
+                            <button class="lcars-btn" onclick="searchProcess()">Search</button>
+                        </div>
+                    </div>
+                    <div id="process-output" style="margin-top: 15px;">
+                        <div class="terminal-output">Process list will appear here...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Network Information -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">🌐</span>
+                    <h2 class="panel-title">Network Information</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="quick-actions" style="margin-bottom: 15px;">
+                        <button class="lcars-btn" onclick="networkInterfaces()">Interfaces</button>
+                        <button class="lcars-btn" onclick="routingTable()">Routes</button>
+                        <button class="lcars-btn" onclick="activePorts()">Listening Ports</button>
+                        <button class="lcars-btn" onclick="activeConnections()">Connections</button>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Ping Host</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="ping-host" class="lcars-input" placeholder="google.com">
+                            <button class="lcars-btn" onclick="pingHost()">Ping</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">DNS Lookup</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="dns-host" class="lcars-input" placeholder="google.com">
+                            <button class="lcars-btn" onclick="dnsLookup()">Lookup</button>
+                        </div>
+                    </div>
+                    <div id="network-output" style="margin-top: 15px;">
+                        <div class="terminal-output">Network info will appear here...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="two-column">
+            <!-- Disk Information -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">💾</span>
+                    <h2 class="panel-title">Disk Information</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="quick-actions" style="margin-bottom: 15px;">
+                        <button class="lcars-btn" onclick="diskSpace()">Disk Space</button>
+                        <button class="lcars-btn" onclick="diskInodes()">Inodes</button>
+                        <button class="lcars-btn" onclick="mountPoints()">Mount Points</button>
+                        <button class="lcars-btn" onclick="diskIO()">I/O Stats</button>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Directory Size</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="dir-size" class="lcars-input" placeholder="/path/to/dir" value=".">
+                            <button class="lcars-btn" onclick="dirSize()">Calculate</button>
+                        </div>
+                    </div>
+                    <div id="disk-output" style="margin-top: 15px;">
+                        <div class="terminal-output">Disk information will appear here...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Environment Variables -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">🔧</span>
+                    <h2 class="panel-title">Environment</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="quick-actions" style="margin-bottom: 15px;">
+                        <button class="lcars-btn" onclick="envVariables()">All Variables</button>
+                        <button class="lcars-btn" onclick="pathVariable()">PATH</button>
+                        <button class="lcars-btn" onclick="shellInfo()">Shell Info</button>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Get Variable</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="env-name" class="lcars-input" placeholder="HOME">
+                            <button class="lcars-btn" onclick="getEnvVar()">Get</button>
+                        </div>
+                    </div>
+                    <div id="env-output" style="margin-top: 15px;">
+                        <div class="terminal-output">Environment variables will appear here...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Service Management -->
+        <div class="lcars-panel">
+            <div class="panel-header">
+                <span class="panel-icon">⚙️</span>
+                <h2 class="panel-title">Service Management</h2>
+            </div>
+            <div class="panel-content">
+                <div class="quick-actions" style="margin-bottom: 15px;">
+                    <button class="lcars-btn" onclick="listServices()">List Services</button>
+                    <button class="lcars-btn" onclick="runningServices()">Running Only</button>
+                    <button class="lcars-btn" onclick="failedServices()">Failed Services</button>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Service Name</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="service-name" class="lcars-input" placeholder="nginx">
+                        <button class="lcars-btn" onclick="serviceStatus()">Status</button>
+                        <button class="lcars-btn success" onclick="serviceStart()">Start</button>
+                        <button class="lcars-btn danger" onclick="serviceStop()">Stop</button>
+                        <button class="lcars-btn" onclick="serviceRestart()">Restart</button>
+                    </div>
+                </div>
+                <div id="service-output" style="margin-top: 15px;">
+                    <div class="terminal-output">Service management output...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="lcars-footer">
+            <p class="footer-text">STARFLEET COMMAND • System Operations Module • LCARS Interface</p>
+        </div>
+    </div>
+
+    <script src="/pages/shared/lcars-core.js"></script>
+    <script>
+        // System Info
+        async function getSystemInfo() {
+            const result = await executeTool('system_info', {});
+            if (result.success) {
+                try {
+                    const info = JSON.parse(result.output);
+                    document.getElementById('stat-platform').textContent = info.platform.toUpperCase();
+                    document.getElementById('stat-cpus').textContent = info.cpus;
+                    document.getElementById('stat-memory').textContent = info.memory.total + 'GB';
+                    document.getElementById('stat-uptime').textContent = formatUptime(info.uptime);
+                    document.getElementById('stat-hostname').textContent = info.hostname.substring(0, 10);
+                    document.getElementById('stat-load').textContent = info.loadAverage ? info.loadAverage[0].toFixed(2) : '-';
+                } catch (e) {
+                    console.error('Error parsing system info:', e);
+                }
+            }
+        }
+
+        function formatUptime(seconds) {
+            const days = Math.floor(seconds / 86400);
+            const hours = Math.floor((seconds % 86400) / 3600);
+            if (days > 0) return days + 'd ' + hours + 'h';
+            return hours + 'h';
+        }
+
+        async function refreshStats() {
+            await getSystemInfo();
+            playSuccessSound();
+        }
+
+        // Command Execution
+        function setCommand(cmd) {
+            document.getElementById('command-input').value = cmd;
+            runCommand();
+        }
+
+        async function runCommand() {
+            const command = document.getElementById('command-input').value;
+            if (!command) {
+                alert('Please enter a command');
+                return;
+            }
+            await runTool('run_command', { command }, 'command-output');
+        }
+
+        // Process Management
+        async function listProcesses() {
+            await runTool('run_command', { command: 'ps aux | head -30' }, 'process-output');
+        }
+
+        async function topProcesses() {
+            await runTool('run_command', { command: 'ps aux --sort=-%cpu | head -15' }, 'process-output');
+        }
+
+        async function topMemory() {
+            await runTool('run_command', { command: 'ps aux --sort=-%mem | head -15' }, 'process-output');
+        }
+
+        async function killProcess(force = false) {
+            const pid = document.getElementById('kill-pid').value;
+            if (!pid) {
+                alert('Please enter a PID');
+                return;
+            }
+            if (!confirm(`Kill process ${pid}?`)) return;
+            const signal = force ? '-9' : '-15';
+            await runTool('run_command', { command: `kill ${signal} ${pid}` }, 'process-output');
+        }
+
+        async function searchProcess() {
+            const name = document.getElementById('process-search').value;
+            if (!name) {
+                alert('Please enter a process name');
+                return;
+            }
+            await runTool('run_command', { command: `ps aux | grep -i "${name}" | grep -v grep` }, 'process-output');
+        }
+
+        // Network
+        async function networkInfo() {
+            await runTool('run_command', { command: 'ip addr 2>/dev/null || ifconfig' }, 'network-output');
+        }
+
+        async function networkInterfaces() {
+            await runTool('run_command', { command: 'ip link show 2>/dev/null || ifconfig -a' }, 'network-output');
+        }
+
+        async function routingTable() {
+            await runTool('run_command', { command: 'ip route 2>/dev/null || netstat -rn' }, 'network-output');
+        }
+
+        async function activePorts() {
+            await runTool('run_command', { command: 'netstat -tlnp 2>/dev/null || ss -tlnp' }, 'network-output');
+        }
+
+        async function activeConnections() {
+            await runTool('run_command', { command: 'netstat -an | head -30 2>/dev/null || ss -an | head -30' }, 'network-output');
+        }
+
+        async function pingHost() {
+            const host = document.getElementById('ping-host').value;
+            if (!host) {
+                alert('Please enter a host');
+                return;
+            }
+            await runTool('run_command', { command: `ping -c 4 ${host}` }, 'network-output');
+        }
+
+        async function dnsLookup() {
+            const host = document.getElementById('dns-host').value;
+            if (!host) {
+                alert('Please enter a host');
+                return;
+            }
+            await runTool('run_command', { command: `nslookup ${host} 2>/dev/null || host ${host}` }, 'network-output');
+        }
+
+        // Disk
+        async function diskSpace() {
+            await runTool('run_command', { command: 'df -h' }, 'disk-output');
+        }
+
+        async function diskInodes() {
+            await runTool('run_command', { command: 'df -i' }, 'disk-output');
+        }
+
+        async function mountPoints() {
+            await runTool('run_command', { command: 'mount | column -t' }, 'disk-output');
+        }
+
+        async function diskIO() {
+            await runTool('run_command', { command: 'iostat 2>/dev/null || echo "iostat not available"' }, 'disk-output');
+        }
+
+        async function dirSize() {
+            const dir = document.getElementById('dir-size').value || '.';
+            await runTool('run_command', { command: `du -sh "${dir}"` }, 'disk-output');
+        }
+
+        async function memoryUsage() {
+            await runTool('run_command', { command: 'free -h 2>/dev/null || vm_stat' }, 'disk-output');
+        }
+
+        // Environment
+        async function envVariables() {
+            await runTool('run_command', { command: 'env | sort | head -50' }, 'env-output');
+        }
+
+        async function pathVariable() {
+            await runTool('run_command', { command: 'echo $PATH | tr ":" "\\n"' }, 'env-output');
+        }
+
+        async function shellInfo() {
+            await runTool('run_command', { command: 'echo "Shell: $SHELL\\nUser: $USER\\nHome: $HOME\\nPWD: $PWD"' }, 'env-output');
+        }
+
+        async function getEnvVar() {
+            const name = document.getElementById('env-name').value;
+            if (!name) {
+                alert('Please enter a variable name');
+                return;
+            }
+            await runTool('run_command', { command: `echo $${name}` }, 'env-output');
+        }
+
+        // Services
+        async function listServices() {
+            await runTool('run_command', { command: 'systemctl list-units --type=service --no-pager | head -30 2>/dev/null || service --status-all 2>/dev/null' }, 'service-output');
+        }
+
+        async function runningServices() {
+            await runTool('run_command', { command: 'systemctl list-units --type=service --state=running --no-pager | head -30 2>/dev/null' }, 'service-output');
+        }
+
+        async function failedServices() {
+            await runTool('run_command', { command: 'systemctl list-units --type=service --state=failed --no-pager 2>/dev/null' }, 'service-output');
+        }
+
+        async function serviceStatus() {
+            const name = document.getElementById('service-name').value;
+            if (!name) {
+                alert('Please enter a service name');
+                return;
+            }
+            await runTool('run_command', { command: `systemctl status ${name} --no-pager 2>/dev/null || service ${name} status` }, 'service-output');
+        }
+
+        async function serviceStart() {
+            const name = document.getElementById('service-name').value;
+            if (!name) return;
+            await runTool('run_command', { command: `sudo systemctl start ${name} 2>/dev/null || sudo service ${name} start` }, 'service-output');
+        }
+
+        async function serviceStop() {
+            const name = document.getElementById('service-name').value;
+            if (!name) return;
+            await runTool('run_command', { command: `sudo systemctl stop ${name} 2>/dev/null || sudo service ${name} stop` }, 'service-output');
+        }
+
+        async function serviceRestart() {
+            const name = document.getElementById('service-name').value;
+            if (!name) return;
+            await runTool('run_command', { command: `sudo systemctl restart ${name} 2>/dev/null || sudo service ${name} restart` }, 'service-output');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            getSystemInfo();
+        });
+
+        // Enter key for command input
+        document.getElementById('command-input')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') runCommand();
+        });
+    </script>
+</body>
+</html>

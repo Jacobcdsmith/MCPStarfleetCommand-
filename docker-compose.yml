@@ -1,0 +1,205 @@
+version: '3.9'
+
+services:
+  # Enhanced MCP Server - Main Application
+  mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: mcp-server
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DEBUG=0
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PROMETHEUS_ENABLED=true
+    volumes:
+      - ./logs:/app/logs
+      - mcp-data:/app/data
+    networks:
+      - mcp-network
+    depends_on:
+      - redis
+      - prometheus
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.mcp.service=server"
+      - "com.mcp.environment=production"
+
+  # Redis - Caching and Real-time Data
+  redis:
+    image: redis:7-alpine
+    container_name: mcp-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
+    networks:
+      - mcp-network
+    command: redis-server /usr/local/etc/redis/redis.conf
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    labels:
+      - "com.mcp.service=cache"
+
+  # Prometheus - Metrics Aggregation
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: mcp-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus-data:/prometheus
+    networks:
+      - mcp-network
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    labels:
+      - "com.mcp.service=metrics"
+
+  # Grafana - Analytics Dashboard and Visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: mcp-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=mcpadmin123
+      - GF_INSTALL_PLUGINS=redis-datasource,grafana-piechart-panel
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    networks:
+      - mcp-network
+    depends_on:
+      - prometheus
+      - redis
+    restart: unless-stopped
+    labels:
+      - "com.mcp.service=visualization"
+
+  # Node Exporter - System Metrics Collection
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: mcp-node-exporter
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    networks:
+      - mcp-network
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    restart: unless-stopped
+    labels:
+      - "com.mcp.service=exporter"
+
+  # cAdvisor - Container Metrics
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: mcp-cadvisor
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    networks:
+      - mcp-network
+    privileged: true
+    restart: unless-stopped
+    labels:
+      - "com.mcp.service=container-metrics"
+
+  # Analytics Service - Custom Metrics and Event Tracking
+  analytics-service:
+    build:
+      context: ./analytics
+      dockerfile: Dockerfile
+    container_name: mcp-analytics
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=production
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MCP_SERVER_URL=http://mcp-server:3001
+    volumes:
+      - ./analytics/data:/app/data
+    networks:
+      - mcp-network
+    depends_on:
+      - redis
+      - mcp-server
+    restart: unless-stopped
+    labels:
+      - "com.mcp.service=analytics"
+
+  # Nginx - Reverse Proxy and Load Balancer
+  nginx:
+    image: nginx:alpine
+    container_name: mcp-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    networks:
+      - mcp-network
+    depends_on:
+      - mcp-server
+      - grafana
+    restart: unless-stopped
+    labels:
+      - "com.mcp.service=proxy"
+
+networks:
+  mcp-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  mcp-data:
+    driver: local
+  redis-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local

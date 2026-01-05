@@ -1,0 +1,22 @@
+{
+  "name": "mcp-analytics-service",
+  "version": "1.0.0",
+  "description": "Real-time analytics and metrics tracking for MCP Server",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "DEBUG=1 node server.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "redis": "^4.6.13",
+    "prom-client": "^15.1.0",
+    "cors": "^2.8.5",
+    "winston": "^3.11.0",
+    "node-cron": "^3.0.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

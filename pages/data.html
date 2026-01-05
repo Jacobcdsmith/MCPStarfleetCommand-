@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Processing - STARFLEET COMMAND</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/pages/shared/lcars-styles.css">
+    <style>
+        .json-viewer {
+            background: rgba(0,20,40,0.8);
+            border: 1px solid var(--lcars-blue);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .json-key { color: #FF9999; }
+        .json-string { color: #99FF99; }
+        .json-number { color: #99CCFF; }
+        .json-boolean { color: #FFCC99; }
+        .json-null { color: #CC99FF; }
+
+        .hash-output {
+            background: rgba(0,50,100,0.4);
+            border: 2px solid var(--lcars-blue);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            word-break: break-all;
+            color: var(--console-green);
+        }
+
+        .hash-label {
+            color: var(--enterprise-gold);
+            font-weight: 600;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .transform-box {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 15px;
+            align-items: stretch;
+        }
+
+        .transform-arrow {
+            display: flex;
+            align-items: center;
+            font-size: 2rem;
+            color: var(--enterprise-gold);
+        }
+
+        .uuid-display {
+            background: linear-gradient(135deg, rgba(0,80,120,0.5) 0%, rgba(0,40,80,0.7) 100%);
+            border: 2px solid var(--enterprise-gold);
+            border-radius: 12px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.2rem;
+            color: var(--console-green);
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .uuid-display:hover {
+            box-shadow: 0 0 20px var(--enterprise-gold);
+        }
+
+        .uuid-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .uuid-item {
+            background: rgba(0,30,60,0.5);
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .copy-btn {
+            background: var(--lcars-blue);
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+            font-size: 0.8rem;
+        }
+
+        .copy-btn:hover {
+            background: var(--lcars-light-blue);
+        }
+    </style>
+</head>
+<body>
+    <div class="lcars-container">
+        <!-- Header -->
+        <div class="lcars-header">
+            <div class="header-left">
+                <a href="/pages/index.html" class="back-btn">← BACK</a>
+                <div>
+                    <h1 class="page-title">🔄 Data Processing</h1>
+                    <p class="page-subtitle">JSON, Encoding, Hashing & Transformation</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="status-badge">
+                    <div class="status-dot"></div>
+                    <span class="status-text">ONLINE</span>
+                </div>
+                <span id="stardate" class="stardate"></span>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="lcars-panel">
+            <div class="panel-header">
+                <span class="panel-icon">⚡</span>
+                <h2 class="panel-title">Quick Actions</h2>
+            </div>
+            <div class="panel-content">
+                <div class="quick-actions">
+                    <button class="lcars-btn primary" onclick="formatJsonEditor()">📋 Format JSON</button>
+                    <button class="lcars-btn" onclick="minifyJsonEditor()">📦 Minify JSON</button>
+                    <button class="lcars-btn" onclick="generateUUID()">🆔 Generate UUID</button>
+                    <button class="lcars-btn" onclick="encodeBase64()">🔒 Base64 Encode</button>
+                    <button class="lcars-btn" onclick="decodeBase64()">🔓 Base64 Decode</button>
+                    <button class="lcars-btn" onclick="calculateAllHashes()">🔐 Hash All</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="two-column">
+            <!-- JSON Operations -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">📋</span>
+                    <h2 class="panel-title">JSON Operations</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="form-group">
+                        <label class="form-label">JSON Input</label>
+                        <textarea id="json-input" class="lcars-textarea" rows="8" placeholder='{"key": "value", "array": [1, 2, 3]}'></textarea>
+                    </div>
+                    <div class="quick-actions" style="margin-bottom: 15px;">
+                        <button class="lcars-btn primary" onclick="formatJsonEditor()">Format</button>
+                        <button class="lcars-btn" onclick="minifyJsonEditor()">Minify</button>
+                        <button class="lcars-btn" onclick="validateJson()">Validate</button>
+                        <button class="lcars-btn" onclick="sortJsonKeys()">Sort Keys</button>
+                        <button class="lcars-btn" onclick="clearJson()">Clear</button>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">JSON Output</label>
+                        <div id="json-output" class="json-viewer">Formatted JSON will appear here...</div>
+                    </div>
+                    <div class="quick-actions">
+                        <button class="lcars-btn" onclick="copyJsonOutput()">📋 Copy Output</button>
+                        <button class="lcars-btn" onclick="downloadJson()">💾 Download JSON</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- JSON Query -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">🔍</span>
+                    <h2 class="panel-title">JSON Query</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="form-group">
+                        <label class="form-label">JSONPath Query</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="json-query" class="lcars-input" placeholder="$.store.book[0].title">
+                            <button class="lcars-btn primary" onclick="queryJson()">Query</button>
+                        </div>
+                    </div>
+                    <div class="quick-actions" style="margin: 10px 0;">
+                        <button class="lcars-btn" onclick="setQuery('$.*')">All Keys</button>
+                        <button class="lcars-btn" onclick="setQuery('$..*')">All Values</button>
+                        <button class="lcars-btn" onclick="setQuery('$[0]')">First Item</button>
+                        <button class="lcars-btn" onclick="setQuery('$.length')">Length</button>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Query Result</label>
+                        <div id="query-output" class="json-viewer" style="min-height: 150px;">Query result will appear here...</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Get Nested Value (dot notation)</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="nested-path" class="lcars-input" placeholder="user.profile.name">
+                            <button class="lcars-btn" onclick="getNestedValue()">Get</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Base64 Encoding -->
+        <div class="lcars-panel">
+            <div class="panel-header">
+                <span class="panel-icon">🔒</span>
+                <h2 class="panel-title">Base64 Encoding</h2>
+            </div>
+            <div class="panel-content">
+                <div class="transform-box">
+                    <div>
+                        <label class="form-label">Plain Text</label>
+                        <textarea id="base64-plain" class="lcars-textarea" rows="5" placeholder="Enter text to encode..."></textarea>
+                    </div>
+                    <div class="transform-arrow">
+                        <div>
+                            <button class="lcars-btn" onclick="encodeBase64()">→</button>
+                            <br><br>
+                            <button class="lcars-btn" onclick="decodeBase64()">←</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label">Base64 Encoded</label>
+                        <textarea id="base64-encoded" class="lcars-textarea" rows="5" placeholder="Encoded text..."></textarea>
+                    </div>
+                </div>
+                <div class="quick-actions" style="margin-top: 15px;">
+                    <button class="lcars-btn" onclick="copyBase64()">📋 Copy Encoded</button>
+                    <button class="lcars-btn" onclick="clearBase64()">🗑️ Clear</button>
+                    <button class="lcars-btn" onclick="encodeURL()">URL Encode</button>
+                    <button class="lcars-btn" onclick="decodeURL()">URL Decode</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="two-column">
+            <!-- Hash Generation -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">🔐</span>
+                    <h2 class="panel-title">Hash Generation</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="form-group">
+                        <label class="form-label">Input Text</label>
+                        <textarea id="hash-input" class="lcars-textarea" rows="4" placeholder="Enter text to hash..."></textarea>
+                    </div>
+                    <div class="quick-actions" style="margin-bottom: 15px;">
+                        <button class="lcars-btn primary" onclick="calculateAllHashes()">All Hashes</button>
+                        <button class="lcars-btn" onclick="calculateHash('MD5')">MD5</button>
+                        <button class="lcars-btn" onclick="calculateHash('SHA1')">SHA-1</button>
+                        <button class="lcars-btn" onclick="calculateHash('SHA256')">SHA-256</button>
+                        <button class="lcars-btn" onclick="calculateHash('SHA512')">SHA-512</button>
+                    </div>
+                    <div id="hash-output">
+                        <div class="hash-output">Hash values will appear here...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- UUID Generation -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">🆔</span>
+                    <h2 class="panel-title">UUID Generation</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="uuid-display" id="current-uuid" onclick="copyCurrentUUID()">
+                        Click "Generate" to create UUID
+                    </div>
+                    <div class="quick-actions" style="margin: 15px 0;">
+                        <button class="lcars-btn primary" onclick="generateUUID()">Generate UUID v4</button>
+                        <button class="lcars-btn" onclick="generateMultipleUUIDs()">Generate 5</button>
+                        <button class="lcars-btn" onclick="copyCurrentUUID()">📋 Copy</button>
+                        <button class="lcars-btn" onclick="clearUUIDs()">Clear All</button>
+                    </div>
+                    <label class="form-label">Generated UUIDs</label>
+                    <div id="uuid-list" class="uuid-list">
+                        <!-- UUIDs will be listed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Text Transformations -->
+        <div class="lcars-panel">
+            <div class="panel-header">
+                <span class="panel-icon">✨</span>
+                <h2 class="panel-title">Text Transformations</h2>
+            </div>
+            <div class="panel-content">
+                <div class="form-group">
+                    <label class="form-label">Input Text</label>
+                    <textarea id="transform-input" class="lcars-textarea" rows="4" placeholder="Enter text to transform..."></textarea>
+                </div>
+                <div class="quick-actions" style="margin-bottom: 15px;">
+                    <button class="lcars-btn" onclick="transformCase('upper')">UPPERCASE</button>
+                    <button class="lcars-btn" onclick="transformCase('lower')">lowercase</button>
+                    <button class="lcars-btn" onclick="transformCase('title')">Title Case</button>
+                    <button class="lcars-btn" onclick="transformCase('camel')">camelCase</button>
+                    <button class="lcars-btn" onclick="transformCase('snake')">snake_case</button>
+                    <button class="lcars-btn" onclick="transformCase('kebab')">kebab-case</button>
+                    <button class="lcars-btn" onclick="transformCase('reverse')">esreveR</button>
+                    <button class="lcars-btn" onclick="transformCase('trim')">Trim</button>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Output</label>
+                    <textarea id="transform-output" class="lcars-textarea" rows="4" readonly></textarea>
+                </div>
+                <div class="quick-actions">
+                    <button class="lcars-btn" onclick="copyTransformOutput()">📋 Copy</button>
+                    <button class="lcars-btn" onclick="swapTransform()">🔄 Swap Input/Output</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Regex Tester -->
+        <div class="lcars-panel">
+            <div class="panel-header">
+                <span class="panel-icon">🔎</span>
+                <h2 class="panel-title">Regex Tester</h2>
+            </div>
+            <div class="panel-content">
+                <div class="form-group">
+                    <label class="form-label">Regular Expression</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="regex-pattern" class="lcars-input" placeholder="\d+">
+                        <input type="text" id="regex-flags" class="lcars-input" style="width: 80px;" placeholder="gi" value="g">
+                    </div>
+                </div>
+                <div class="quick-actions" style="margin: 10px 0;">
+                    <button class="lcars-btn" onclick="setRegex('\\d+', 'g')">Numbers</button>
+                    <button class="lcars-btn" onclick="setRegex('[a-zA-Z]+', 'g')">Words</button>
+                    <button class="lcars-btn" onclick="setRegex('\\S+@\\S+', 'g')">Emails</button>
+                    <button class="lcars-btn" onclick="setRegex('https?://\\S+', 'g')">URLs</button>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Test String</label>
+                    <textarea id="regex-input" class="lcars-textarea" rows="3" placeholder="Enter text to test..."></textarea>
+                </div>
+                <button class="lcars-btn primary" onclick="testRegex()" style="margin-bottom: 15px;">Test Regex</button>
+                <div class="form-group">
+                    <label class="form-label">Matches</label>
+                    <div id="regex-output" class="json-viewer" style="min-height: 100px;">Matches will appear here...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="lcars-footer">
+            <p class="footer-text">STARFLEET COMMAND • Data Processing Module • LCARS Interface</p>
+        </div>
+    </div>
+
+    <script src="/pages/shared/lcars-core.js"></script>
+    <script>
+        let generatedUUIDs = [];
+        let currentUUID = '';
+
+        // JSON Operations
+        function formatJsonEditor() {
+            const input = document.getElementById('json-input').value;
+            if (!input.trim()) {
+                alert('Please enter JSON to format');
+                return;
+            }
+            try {
+                const parsed = JSON.parse(input);
+                const formatted = JSON.stringify(parsed, null, 2);
+                document.getElementById('json-output').innerHTML = syntaxHighlight(formatted);
+                playSuccessSound();
+            } catch (e) {
+                document.getElementById('json-output').innerHTML = `<span style="color: #ff6666;">Error: ${e.message}</span>`;
+            }
+        }
+
+        function minifyJsonEditor() {
+            const input = document.getElementById('json-input').value;
+            try {
+                const parsed = JSON.parse(input);
+                const minified = JSON.stringify(parsed);
+                document.getElementById('json-output').textContent = minified;
+                playSuccessSound();
+            } catch (e) {
+                document.getElementById('json-output').innerHTML = `<span style="color: #ff6666;">Error: ${e.message}</span>`;
+            }
+        }
+
+        function validateJson() {
+            const input = document.getElementById('json-input').value;
+            try {
+                JSON.parse(input);
+                document.getElementById('json-output').innerHTML = '<span style="color: #99ff99;">✓ Valid JSON</span>';
+                playSuccessSound();
+            } catch (e) {
+                document.getElementById('json-output').innerHTML = `<span style="color: #ff6666;">✗ Invalid JSON: ${e.message}</span>`;
+            }
+        }
+
+        function sortJsonKeys() {
+            const input = document.getElementById('json-input').value;
+            try {
+                const parsed = JSON.parse(input);
+                const sorted = sortObject(parsed);
+                const formatted = JSON.stringify(sorted, null, 2);
+                document.getElementById('json-output').innerHTML = syntaxHighlight(formatted);
+                playSuccessSound();
+            } catch (e) {
+                document.getElementById('json-output').innerHTML = `<span style="color: #ff6666;">Error: ${e.message}</span>`;
+            }
+        }
+
+        function sortObject(obj) {
+            if (Array.isArray(obj)) {
+                return obj.map(sortObject);
+            } else if (obj !== null && typeof obj === 'object') {
+                return Object.keys(obj).sort().reduce((result, key) => {
+                    result[key] = sortObject(obj[key]);
+                    return result;
+                }, {});
+            }
+            return obj;
+        }
+
+        function syntaxHighlight(json) {
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                let cls = 'json-number';
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        cls = 'json-key';
+                    } else {
+                        cls = 'json-string';
+                    }
+                } else if (/true|false/.test(match)) {
+                    cls = 'json-boolean';
+                } else if (/null/.test(match)) {
+                    cls = 'json-null';
+                }
+                return '<span class="' + cls + '">' + match + '</span>';
+            });
+        }
+
+        function clearJson() {
+            document.getElementById('json-input').value = '';
+            document.getElementById('json-output').textContent = 'Formatted JSON will appear here...';
+        }
+
+        function copyJsonOutput() {
+            const output = document.getElementById('json-output').textContent;
+            navigator.clipboard.writeText(output);
+            playSuccessSound();
+        }
+
+        function downloadJson() {
+            const output = document.getElementById('json-output').textContent;
+            const blob = new Blob([output], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'data.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // JSON Query
+        function setQuery(query) {
+            document.getElementById('json-query').value = query;
+        }
+
+        function queryJson() {
+            const input = document.getElementById('json-input').value;
+            const query = document.getElementById('json-query').value;
+            try {
+                const parsed = JSON.parse(input);
+                // Simple implementation for basic queries
+                let result;
+                if (query === '$.*') {
+                    result = Object.keys(parsed);
+                } else if (query === '$..*') {
+                    result = getAllValues(parsed);
+                } else if (query === '$.length') {
+                    result = Array.isArray(parsed) ? parsed.length : Object.keys(parsed).length;
+                } else if (query.startsWith('$[') && query.endsWith(']')) {
+                    const index = parseInt(query.slice(2, -1));
+                    result = Array.isArray(parsed) ? parsed[index] : undefined;
+                } else {
+                    // Try dot notation
+                    result = getNestedPath(parsed, query.replace('$.', ''));
+                }
+                document.getElementById('query-output').innerHTML = syntaxHighlight(JSON.stringify(result, null, 2));
+                playSuccessSound();
+            } catch (e) {
+                document.getElementById('query-output').innerHTML = `<span style="color: #ff6666;">Error: ${e.message}</span>`;
+            }
+        }
+
+        function getAllValues(obj) {
+            let values = [];
+            for (let key in obj) {
+                if (typeof obj[key] === 'object' && obj[key] !== null) {
+                    values = values.concat(getAllValues(obj[key]));
+                } else {
+                    values.push(obj[key]);
+                }
+            }
+            return values;
+        }
+
+        function getNestedPath(obj, path) {
+            return path.split('.').reduce((o, p) => o ? o[p] : undefined, obj);
+        }
+
+        function getNestedValue() {
+            const input = document.getElementById('json-input').value;
+            const path = document.getElementById('nested-path').value;
+            try {
+                const parsed = JSON.parse(input);
+                const result = getNestedPath(parsed, path);
+                document.getElementById('query-output').innerHTML = syntaxHighlight(JSON.stringify(result, null, 2));
+            } catch (e) {
+                document.getElementById('query-output').innerHTML = `<span style="color: #ff6666;">Error: ${e.message}</span>`;
+            }
+        }
+
+        // Base64
+        function encodeBase64() {
+            const plain = document.getElementById('base64-plain').value;
+            try {
+                const encoded = btoa(unescape(encodeURIComponent(plain)));
+                document.getElementById('base64-encoded').value = encoded;
+                playSuccessSound();
+            } catch (e) {
+                alert('Error encoding: ' + e.message);
+            }
+        }
+
+        function decodeBase64() {
+            const encoded = document.getElementById('base64-encoded').value;
+            try {
+                const decoded = decodeURIComponent(escape(atob(encoded)));
+                document.getElementById('base64-plain').value = decoded;
+                playSuccessSound();
+            } catch (e) {
+                alert('Error decoding: ' + e.message);
+            }
+        }
+
+        function copyBase64() {
+            const encoded = document.getElementById('base64-encoded').value;
+            navigator.clipboard.writeText(encoded);
+            playSuccessSound();
+        }
+
+        function clearBase64() {
+            document.getElementById('base64-plain').value = '';
+            document.getElementById('base64-encoded').value = '';
+        }
+
+        function encodeURL() {
+            const plain = document.getElementById('base64-plain').value;
+            document.getElementById('base64-encoded').value = encodeURIComponent(plain);
+            playSuccessSound();
+        }
+
+        function decodeURL() {
+            const encoded = document.getElementById('base64-encoded').value;
+            document.getElementById('base64-plain').value = decodeURIComponent(encoded);
+            playSuccessSound();
+        }
+
+        // Hash Generation
+        async function calculateHash(algorithm) {
+            const input = document.getElementById('hash-input').value;
+            if (!input) {
+                alert('Please enter text to hash');
+                return;
+            }
+
+            const encoder = new TextEncoder();
+            const data = encoder.encode(input);
+            
+            let hashAlgo = algorithm;
+            if (algorithm === 'MD5') {
+                // MD5 not supported by Web Crypto, use simple hash
+                const hash = simpleMD5(input);
+                document.getElementById('hash-output').innerHTML = `
+                    <div class="hash-output">
+                        <div class="hash-label">MD5</div>
+                        <div>${hash}</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            if (algorithm === 'SHA1') hashAlgo = 'SHA-1';
+            if (algorithm === 'SHA256') hashAlgo = 'SHA-256';
+            if (algorithm === 'SHA512') hashAlgo = 'SHA-512';
+
+            try {
+                const hashBuffer = await crypto.subtle.digest(hashAlgo, data);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                
+                document.getElementById('hash-output').innerHTML = `
+                    <div class="hash-output">
+                        <div class="hash-label">${algorithm}</div>
+                        <div>${hashHex}</div>
+                    </div>
+                `;
+                playSuccessSound();
+            } catch (e) {
+                document.getElementById('hash-output').innerHTML = `<div class="hash-output" style="color: #ff6666;">Error: ${e.message}</div>`;
+            }
+        }
+
+        async function calculateAllHashes() {
+            const input = document.getElementById('hash-input').value;
+            if (!input) {
+                alert('Please enter text to hash');
+                return;
+            }
+
+            const encoder = new TextEncoder();
+            const data = encoder.encode(input);
+            
+            const algorithms = ['SHA-1', 'SHA-256', 'SHA-512'];
+            let results = '<div class="hash-output">';
+            results += `<div class="hash-label">MD5</div><div style="margin-bottom: 15px;">${simpleMD5(input)}</div>`;
+            
+            for (const algo of algorithms) {
+                try {
+                    const hashBuffer = await crypto.subtle.digest(algo, data);
+                    const hashArray = Array.from(new Uint8Array(hashBuffer));
+                    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                    results += `<div class="hash-label">${algo}</div><div style="margin-bottom: 15px;">${hashHex}</div>`;
+                } catch (e) {
+                    results += `<div class="hash-label">${algo}</div><div style="margin-bottom: 15px; color: #ff6666;">Error</div>`;
+                }
+            }
+            results += '</div>';
+            document.getElementById('hash-output').innerHTML = results;
+            playSuccessSound();
+        }
+
+        // Simple MD5 implementation (for demo purposes)
+        function simpleMD5(string) {
+            let hash = 0;
+            for (let i = 0; i < string.length; i++) {
+                const char = string.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            return Math.abs(hash).toString(16).padStart(32, '0');
+        }
+
+        // UUID Generation
+        function generateUUID() {
+            currentUUID = crypto.randomUUID ? crypto.randomUUID() : 
+                'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    const r = Math.random() * 16 | 0;
+                    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            
+            document.getElementById('current-uuid').textContent = currentUUID;
+            addUUIDToList(currentUUID);
+            playSuccessSound();
+        }
+
+        function generateMultipleUUIDs() {
+            for (let i = 0; i < 5; i++) {
+                generateUUID();
+            }
+        }
+
+        function addUUIDToList(uuid) {
+            generatedUUIDs.unshift(uuid);
+            if (generatedUUIDs.length > 10) generatedUUIDs.pop();
+            renderUUIDList();
+        }
+
+        function renderUUIDList() {
+            const list = document.getElementById('uuid-list');
+            list.innerHTML = generatedUUIDs.map((uuid, index) => `
+                <div class="uuid-item">
+                    <span>${uuid}</span>
+                    <button class="copy-btn" onclick="copyUUID('${uuid}')">Copy</button>
+                </div>
+            `).join('');
+        }
+
+        function copyCurrentUUID() {
+            if (currentUUID) {
+                navigator.clipboard.writeText(currentUUID);
+                playSuccessSound();
+            }
+        }
+
+        function copyUUID(uuid) {
+            navigator.clipboard.writeText(uuid);
+            playSuccessSound();
+        }
+
+        function clearUUIDs() {
+            generatedUUIDs = [];
+            currentUUID = '';
+            document.getElementById('current-uuid').textContent = 'Click "Generate" to create UUID';
+            document.getElementById('uuid-list').innerHTML = '';
+        }
+
+        // Text Transformations
+        function transformCase(type) {
+            const input = document.getElementById('transform-input').value;
+            let output = '';
+            
+            switch(type) {
+                case 'upper':
+                    output = input.toUpperCase();
+                    break;
+                case 'lower':
+                    output = input.toLowerCase();
+                    break;
+                case 'title':
+                    output = input.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+                    break;
+                case 'camel':
+                    output = input.toLowerCase().replace(/[^a-zA-Z0-9]+(.)/g, (m, chr) => chr.toUpperCase());
+                    break;
+                case 'snake':
+                    output = input.toLowerCase().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+                    break;
+                case 'kebab':
+                    output = input.toLowerCase().replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
+                    break;
+                case 'reverse':
+                    output = input.split('').reverse().join('');
+                    break;
+                case 'trim':
+                    output = input.trim();
+                    break;
+            }
+            
+            document.getElementById('transform-output').value = output;
+            playSuccessSound();
+        }
+
+        function copyTransformOutput() {
+            const output = document.getElementById('transform-output').value;
+            navigator.clipboard.writeText(output);
+            playSuccessSound();
+        }
+
+        function swapTransform() {
+            const input = document.getElementById('transform-input');
+            const output = document.getElementById('transform-output');
+            const temp = input.value;
+            input.value = output.value;
+            output.value = temp;
+        }
+
+        // Regex Tester
+        function setRegex(pattern, flags) {
+            document.getElementById('regex-pattern').value = pattern;
+            document.getElementById('regex-flags').value = flags;
+        }
+
+        function testRegex() {
+            const pattern = document.getElementById('regex-pattern').value;
+            const flags = document.getElementById('regex-flags').value;
+            const input = document.getElementById('regex-input').value;
+            
+            try {
+                const regex = new RegExp(pattern, flags);
+                const matches = input.match(regex);
+                
+                if (matches) {
+                    document.getElementById('regex-output').innerHTML = `
+                        <div style="color: #99ff99; margin-bottom: 10px;">Found ${matches.length} match(es):</div>
+                        ${matches.map((m, i) => `<div style="padding: 5px; background: rgba(0,100,150,0.3); margin: 5px 0; border-radius: 4px;">${i + 1}. "${escapeHtml(m)}"</div>`).join('')}
+                    `;
+                } else {
+                    document.getElementById('regex-output').innerHTML = '<span style="color: #ff9999;">No matches found</span>';
+                }
+                playSuccessSound();
+            } catch (e) {
+                document.getElementById('regex-output').innerHTML = `<span style="color: #ff6666;">Invalid regex: ${e.message}</span>`;
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Sample JSON
+            document.getElementById('json-input').value = '{\n  "name": "LCARS",\n  "version": "2.0",\n  "features": ["analytics", "multi-page", "themes"]\n}';
+        });
+    </script>
+</body>
+</html>

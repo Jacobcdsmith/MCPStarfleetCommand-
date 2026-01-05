@@ -1,0 +1,102 @@
+groups:
+  - name: mcp_alerts
+    interval: 30s
+    rules:
+      # High error rate alert
+      - alert: HighErrorRate
+        expr: mcp_error_rate > 10
+        for: 5m
+        labels:
+          severity: warning
+          component: mcp-server
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value }}% for the last 5 minutes"
+
+      # Critical error rate
+      - alert: CriticalErrorRate
+        expr: mcp_error_rate > 25
+        for: 2m
+        labels:
+          severity: critical
+          component: mcp-server
+        annotations:
+          summary: "Critical error rate detected"
+          description: "Error rate is {{ $value }}% - immediate attention required"
+
+      # Low system health
+      - alert: LowSystemHealth
+        expr: mcp_system_health < 50
+        for: 5m
+        labels:
+          severity: warning
+          component: mcp-server
+        annotations:
+          summary: "System health degraded"
+          description: "System health score is {{ $value }}"
+
+      # Critical system health
+      - alert: CriticalSystemHealth
+        expr: mcp_system_health < 25
+        for: 2m
+        labels:
+          severity: critical
+          component: mcp-server
+        annotations:
+          summary: "Critical system health"
+          description: "System health score is {{ $value }} - immediate action required"
+
+      # No active users
+      - alert: NoActiveUsers
+        expr: mcp_active_users == 0
+        for: 30m
+        labels:
+          severity: info
+          component: mcp-server
+        annotations:
+          summary: "No active users detected"
+          description: "No user activity for 30 minutes"
+
+      # High tool execution latency
+      - alert: HighToolLatency
+        expr: histogram_quantile(0.95, rate(mcp_tool_execution_duration_seconds_bucket[5m])) > 5
+        for: 10m
+        labels:
+          severity: warning
+          component: mcp-server
+        annotations:
+          summary: "High tool execution latency"
+          description: "95th percentile latency is {{ $value }}s"
+
+      # Container down
+      - alert: ContainerDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: infrastructure
+        annotations:
+          summary: "Container {{ $labels.instance }} is down"
+          description: "Container has been down for more than 1 minute"
+
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100 < 10
+        for: 5m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "High memory usage detected"
+          description: "Available memory is below 10%"
+
+      # High CPU usage
+      - alert: HighCPUUsage
+        expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 10m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is above 80% for 10 minutes"

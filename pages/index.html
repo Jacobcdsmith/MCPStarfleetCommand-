@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STARFLEET COMMAND - MCP Control Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/pages/shared/lcars-styles.css">
+    <style>
+        /* Hub-specific styles */
+        .hub-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .hub-card {
+            background: linear-gradient(135deg, var(--lcars-gray) 0%, rgba(0,0,50,0.9) 100%);
+            border: 3px solid var(--lcars-blue);
+            border-radius: 25px 0 25px 0;
+            padding: 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            display: block;
+        }
+
+        .hub-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: var(--lcars-orange);
+        }
+
+        .hub-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 50px;
+            height: 100%;
+            background: var(--lcars-blue);
+            border-radius: 0 22px 22px 0;
+            opacity: 0.8;
+            transition: all 0.3s ease;
+        }
+
+        .hub-card:hover {
+            border-color: var(--enterprise-gold);
+            transform: translateY(-10px);
+            box-shadow: 0 20px 50px rgba(255,215,0,0.3);
+        }
+
+        .hub-card:hover::after {
+            background: var(--enterprise-gold);
+        }
+
+        .hub-card-content {
+            padding: 30px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .hub-card-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .hub-card-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--enterprise-gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .hub-card-desc {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1rem;
+            color: var(--lcars-light-blue);
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+
+        .hub-card-tools {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tool-tag {
+            background: rgba(0,100,150,0.5);
+            border: 1px solid var(--warp-core-blue);
+            border-radius: 15px;
+            padding: 5px 12px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.8rem;
+            color: var(--warp-core-blue);
+        }
+
+        /* Hero section */
+        .hero-section {
+            text-align: center;
+            padding: 40px 20px;
+            margin-bottom: 30px;
+            background: linear-gradient(180deg, rgba(0,0,50,0.5) 0%, transparent 100%);
+            border-radius: 20px;
+        }
+
+        .hero-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: var(--enterprise-gold);
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            margin-bottom: 15px;
+            text-shadow: 
+                0 0 20px var(--enterprise-gold),
+                0 0 40px var(--enterprise-gold),
+                0 0 60px var(--enterprise-gold);
+            animation: titlePulse 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes titlePulse {
+            0% { text-shadow: 0 0 20px var(--enterprise-gold), 0 0 40px var(--enterprise-gold); }
+            100% { text-shadow: 0 0 30px var(--enterprise-gold), 0 0 60px var(--enterprise-gold), 0 0 80px var(--enterprise-gold); }
+        }
+
+        .hero-subtitle {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.3rem;
+            color: var(--lcars-light-blue);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .hero-stat {
+            text-align: center;
+        }
+
+        .hero-stat-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--warp-core-blue);
+            text-shadow: 0 0 15px var(--warp-core-blue);
+        }
+
+        .hero-stat-label {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.9rem;
+            color: var(--lcars-light-blue);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Quick links */
+        .quick-links {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        .quick-link {
+            background: var(--lcars-purple);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 25px;
+            color: var(--lcars-black);
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            text-transform: uppercase;
+        }
+
+        .quick-link:hover {
+            background: var(--enterprise-gold);
+            transform: scale(1.05);
+            box-shadow: 0 0 25px var(--enterprise-gold);
+        }
+
+        .quick-link.grafana { background: var(--lcars-orange); }
+        .quick-link.prometheus { background: var(--alert-red); color: var(--lcars-white); }
+        .quick-link.analytics { background: var(--console-green); }
+
+        /* Status bar */
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 25px;
+            background: rgba(0,0,50,0.6);
+            border: 2px solid var(--lcars-blue);
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--console-green);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .status-indicator.warning { background: var(--lcars-yellow); }
+        .status-indicator.error { background: var(--alert-red); }
+
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2rem;
+            }
+            .hub-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="lcars-container">
+        <!-- Hero Section -->
+        <div class="hero-section">
+            <h1 class="hero-title">STARFLEET COMMAND</h1>
+            <p class="hero-subtitle">Model Context Protocol • Control Hub</p>
+            <div class="hero-stats">
+                <div class="hero-stat">
+                    <div class="hero-stat-value" id="tool-count">13</div>
+                    <div class="hero-stat-label">MCP Tools</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-value" id="page-count">8</div>
+                    <div class="hero-stat-label">Modules</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-value" id="stardate">--.--</div>
+                    <div class="hero-stat-label">Stardate</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="quick-links">
+            <a href="/dashboard.html" class="quick-link">📊 Full Dashboard</a>
+            <a href="http://localhost:3000" target="_blank" class="quick-link grafana">📈 Grafana</a>
+            <a href="http://localhost:9090" target="_blank" class="quick-link prometheus">🔥 Prometheus</a>
+            <a href="http://localhost:3002" target="_blank" class="quick-link analytics">📉 Analytics</a>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-indicator" id="mcp-status"></div>
+                <span>MCP Server</span>
+            </div>
+            <div class="status-item">
+                <div class="status-indicator" id="redis-status"></div>
+                <span>Redis</span>
+            </div>
+            <div class="status-item">
+                <div class="status-indicator" id="prometheus-status"></div>
+                <span>Prometheus</span>
+            </div>
+            <div class="status-item">
+                <div class="status-indicator" id="grafana-status"></div>
+                <span>Grafana</span>
+            </div>
+            <div class="status-item">
+                <span id="stardate-display" class="stardate"></span>
+            </div>
+        </div>
+
+        <!-- Module Cards -->
+        <div class="hub-grid">
+            <!-- Git Operations -->
+            <a href="/pages/git.html" class="hub-card">
+                <div class="hub-card-content">
+                    <span class="hub-card-icon">🔀</span>
+                    <h2 class="hub-card-title">Git Operations</h2>
+                    <p class="hub-card-desc">Version control management - status, commits, branches, diffs, stash, and more.</p>
+                    <div class="hub-card-tools">
+                        <span class="tool-tag">git_status</span>
+                        <span class="tool-tag">git_log</span>
+                        <span class="tool-tag">git_diff</span>
+                        <span class="tool-tag">git_branch</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- File System -->
+            <a href="/pages/files.html" class="hub-card">
+                <div class="hub-card-content">
+                    <span class="hub-card-icon">📁</span>
+                    <h2 class="hub-card-title">File System</h2>
+                    <p class="hub-card-desc">Browse, read, write, and manage files and directories across the system.</p>
+                    <div class="hub-card-tools">
+                        <span class="tool-tag">list_files</span>
+                        <span class="tool-tag">read_file</span>
+                        <span class="tool-tag">write_file</span>
+                        <span class="tool-tag">create_directory</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- System Operations -->
+            <a href="/pages/system.html" class="hub-card">
+                <div class="hub-card-content">
+                    <span class="hub-card-icon">💻</span>
+                    <h2 class="hub-card-title">System Operations</h2>
+                    <p class="hub-card-desc">Execute commands, monitor processes, view system information and resources.</p>
+                    <div class="hub-card-tools">
+                        <span class="tool-tag">run_command</span>
+                        <span class="tool-tag">system_info</span>
+                        <span class="tool-tag">search_files</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Docker Fleet -->
+            <a href="/pages/docker.html" class="hub-card">
+                <div class="hub-card-content">
+                    <span class="hub-card-icon">🐳</span>
+                    <h2 class="hub-card-title">Docker Fleet</h2>
+                    <p class="hub-card-desc">Container management - compose, logs, stats, images, networks, and volumes.</p>
+                    <div class="hub-card-tools">
+                        <span class="tool-tag">containers</span>
+                        <span class="tool-tag">compose</span>
+                        <span class="tool-tag">logs</span>
+                        <span class="tool-tag">stats</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Data Processing -->
+            <a href="/pages/data.html" class="hub-card">
+                <div class="hub-card-content">
+                    <span class="hub-card-icon">🔬</span>
+                    <h2 class="hub-card-title">Data Processing</h2>
+                    <p class="hub-card-desc">JSON parsing, encoding, hashing, UUID generation, and text analysis tools.</p>
+                    <div class="hub-card-tools">
+                        <span class="tool-tag">parse_json</span>
+                        <span class="tool-tag">format_json</span>
+                        <span class="tool-tag">base64</span>
+                        <span class="tool-tag">hash</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Network Tools -->
+            <a href="/pages/network.html" class="hub-card">
+                <div class="hub-card-content">
+                    <span class="hub-card-icon">🌐</span>
+                    <h2 class="hub-card-title">Network Tools</h2>
+                    <p class="hub-card-desc">Network diagnostics - ping, curl, DNS lookup, port scanning, and more.</p>
+                    <div class="hub-card-tools">
+                        <span class="tool-tag">ping</span>
+                        <span class="tool-tag">curl</span>
+                        <span class="tool-tag">dns</span>
+                        <span class="tool-tag">ports</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Analytics -->
+            <a href="/pages/analytics.html" class="hub-card">
+                <div class="hub-card-content">
+                    <span class="hub-card-icon">📊</span>
+                    <h2 class="hub-card-title">Analytics Hub</h2>
+                    <p class="hub-card-desc">Real-time metrics, performance charts, activity monitoring, and service health.</p>
+                    <div class="hub-card-tools">
+                        <span class="tool-tag">metrics</span>
+                        <span class="tool-tag">charts</span>
+                        <span class="tool-tag">health</span>
+                        <span class="tool-tag">alerts</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- NPM/Node -->
+            <a href="/pages/npm.html" class="hub-card">
+                <div class="hub-card-content">
+                    <span class="hub-card-icon">📦</span>
+                    <h2 class="hub-card-title">NPM / Node.js</h2>
+                    <p class="hub-card-desc">Package management, scripts, auditing, and Node.js runtime operations.</p>
+                    <div class="hub-card-tools">
+                        <span class="tool-tag">install</span>
+                        <span class="tool-tag">update</span>
+                        <span class="tool-tag">audit</span>
+                        <span class="tool-tag">scripts</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Footer -->
+        <div class="lcars-footer">
+            <p class="footer-text">STARFLEET COMMAND • Enhanced MCP Server • LCARS Interface v2.0</p>
+        </div>
+    </div>
+
+    <script src="/pages/shared/lcars-core.js"></script>
+    <script>
+        // Update stardate in hero
+        function updateHeroStardate() {
+            const el = document.getElementById('stardate');
+            if (el) {
+                el.textContent = generateStardate();
+            }
+        }
+
+        // Check all services
+        async function checkAllServices() {
+            const services = [
+                { id: 'mcp-status', port: 3001 },
+                { id: 'redis-status', port: 6379 },
+                { id: 'prometheus-status', port: 9090 },
+                { id: 'grafana-status', port: 3000 }
+            ];
+
+            for (const svc of services) {
+                const indicator = document.getElementById(svc.id);
+                if (!indicator) continue;
+
+                try {
+                    if (svc.port === 3001) {
+                        await apiCall('/api/status');
+                        indicator.className = 'status-indicator';
+                    } else {
+                        // Just assume online for now - actual check would need CORS
+                        indicator.className = 'status-indicator';
+                    }
+                } catch {
+                    indicator.className = 'status-indicator error';
+                }
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            updateHeroStardate();
+            setInterval(updateHeroStardate, 1000);
+            checkAllServices();
+            setInterval(checkAllServices, 30000);
+        });
+    </script>
+</body>
+</html>

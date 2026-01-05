@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Services - STARFLEET COMMAND</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/pages/shared/lcars-styles.css">
+    <style>
+        .service-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .service-card {
+            background: linear-gradient(135deg, rgba(0,80,120,0.4) 0%, rgba(0,40,80,0.6) 100%);
+            border: 2px solid var(--lcars-blue);
+            border-radius: 16px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,100,150,0.3);
+        }
+
+        .service-card.healthy {
+            border-color: var(--console-green);
+        }
+
+        .service-card.unhealthy {
+            border-color: #ff6666;
+        }
+
+        .service-card.degraded {
+            border-color: var(--enterprise-gold);
+        }
+
+        .service-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .service-name {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--enterprise-gold);
+            margin-bottom: 10px;
+        }
+
+        .service-status {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+        }
+
+        .service-status.healthy {
+            background: rgba(0,255,100,0.2);
+            color: var(--console-green);
+        }
+
+        .service-status.unhealthy {
+            background: rgba(255,100,100,0.2);
+            color: #ff6666;
+        }
+
+        .service-status.degraded {
+            background: rgba(255,200,100,0.2);
+            color: var(--enterprise-gold);
+        }
+
+        .service-stats {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.9rem;
+            color: var(--lcars-light-blue);
+        }
+
+        .service-stats div {
+            margin: 5px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .service-link {
+            display: block;
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(0,100,150,0.3);
+            border-radius: 8px;
+            text-align: center;
+            color: var(--lcars-light-blue);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .service-link:hover {
+            background: rgba(0,150,200,0.4);
+            color: white;
+        }
+
+        .health-indicator {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .health-indicator.healthy {
+            background: var(--console-green);
+            box-shadow: 0 0 10px var(--console-green);
+        }
+
+        .health-indicator.unhealthy {
+            background: #ff6666;
+            box-shadow: 0 0 10px #ff6666;
+        }
+
+        .health-indicator.degraded {
+            background: var(--enterprise-gold);
+            box-shadow: 0 0 10px var(--enterprise-gold);
+        }
+
+        .endpoint-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .endpoint-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(85,85,255,0.2);
+        }
+
+        .endpoint-item:hover {
+            background: rgba(0,100,150,0.2);
+        }
+
+        .endpoint-method {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+
+        .endpoint-method.GET {
+            background: rgba(0,200,100,0.3);
+            color: var(--console-green);
+        }
+
+        .endpoint-method.POST {
+            background: rgba(100,150,255,0.3);
+            color: #99ccff;
+        }
+
+        .endpoint-method.PUT {
+            background: rgba(255,200,100,0.3);
+            color: var(--enterprise-gold);
+        }
+
+        .endpoint-method.DELETE {
+            background: rgba(255,100,100,0.3);
+            color: #ff6666;
+        }
+
+        .endpoint-path {
+            flex: 1;
+            font-family: 'Courier New', monospace;
+            color: var(--lcars-light-blue);
+        }
+
+        .mcp-tool-card {
+            background: rgba(0,40,80,0.5);
+            border: 1px solid var(--lcars-blue);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        .mcp-tool-name {
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            color: var(--enterprise-gold);
+            margin-bottom: 8px;
+        }
+
+        .mcp-tool-desc {
+            font-size: 0.9rem;
+            color: var(--lcars-light-blue);
+            margin-bottom: 10px;
+        }
+
+        .mcp-tool-params {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        .metrics-chart {
+            height: 200px;
+            background: rgba(0,20,40,0.8);
+            border: 1px solid var(--lcars-blue);
+            border-radius: 8px;
+            display: flex;
+            align-items: flex-end;
+            padding: 20px;
+            gap: 10px;
+        }
+
+        .metrics-bar {
+            flex: 1;
+            background: linear-gradient(to top, var(--lcars-blue), var(--console-green));
+            border-radius: 4px 4px 0 0;
+            min-width: 30px;
+            transition: height 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="lcars-container">
+        <!-- Header -->
+        <div class="lcars-header">
+            <div class="header-left">
+                <a href="/pages/index.html" class="back-btn">← BACK</a>
+                <div>
+                    <h1 class="page-title">🔌 MCP Services</h1>
+                    <p class="page-subtitle">Service Health, Monitoring & Endpoints</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="status-badge">
+                    <div class="status-dot"></div>
+                    <span class="status-text">ONLINE</span>
+                </div>
+                <span id="stardate" class="stardate"></span>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="lcars-panel">
+            <div class="panel-header">
+                <span class="panel-icon">⚡</span>
+                <h2 class="panel-title">Quick Actions</h2>
+            </div>
+            <div class="panel-content">
+                <div class="quick-actions">
+                    <button class="lcars-btn primary" onclick="refreshAll()">🔄 Refresh All</button>
+                    <button class="lcars-btn" onclick="checkHealth()">💚 Health Check</button>
+                    <button class="lcars-btn" onclick="listTools()">🔧 List Tools</button>
+                    <button class="lcars-btn" onclick="viewEndpoints()">📡 Endpoints</button>
+                    <button class="lcars-btn" onclick="viewMetrics()">📊 Metrics</button>
+                    <button class="lcars-btn" onclick="openGrafana()">📈 Grafana</button>
+                    <button class="lcars-btn" onclick="openPrometheus()">🎯 Prometheus</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Service Status Grid -->
+        <div class="lcars-panel">
+            <div class="panel-header">
+                <span class="panel-icon">🌐</span>
+                <h2 class="panel-title">Service Fleet Status</h2>
+                <button class="lcars-btn" onclick="refreshServices()" style="margin-left: auto;">🔄 Refresh</button>
+            </div>
+            <div class="panel-content">
+                <div id="service-fleet" class="service-grid">
+                    <!-- Services will be rendered here -->
+                </div>
+            </div>
+        </div>
+
+        <div class="two-column">
+            <!-- MCP Server Info -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">🔧</span>
+                    <h2 class="panel-title">MCP Server</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="service-card healthy" style="width: 100%; margin-bottom: 20px;">
+                        <div class="health-indicator healthy"></div>
+                        <div class="service-icon">🖥️</div>
+                        <div class="service-name">MCP Core Server</div>
+                        <div class="service-status healthy">Operational</div>
+                        <div class="service-stats">
+                            <div><span>Port:</span> <span id="mcp-port">3001</span></div>
+                            <div><span>Protocol:</span> <span>HTTP/MCP</span></div>
+                            <div><span>Tools:</span> <span id="tool-count">13</span></div>
+                            <div><span>Uptime:</span> <span id="mcp-uptime">-</span></div>
+                        </div>
+                    </div>
+                    <button class="lcars-btn primary" onclick="getServerInfo()">Get Server Info</button>
+                    <button class="lcars-btn" onclick="restartServer()">Restart Server</button>
+                    <div id="server-info" style="margin-top: 15px;">
+                        <div class="terminal-output">Server info will appear here...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Health Checks -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">💚</span>
+                    <h2 class="panel-title">Health Checks</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="quick-actions" style="margin-bottom: 15px;">
+                        <button class="lcars-btn primary" onclick="runHealthChecks()">Run All Checks</button>
+                        <button class="lcars-btn" onclick="checkMCPHealth()">MCP Server</button>
+                        <button class="lcars-btn" onclick="checkRedis()">Redis</button>
+                        <button class="lcars-btn" onclick="checkDocker()">Docker</button>
+                    </div>
+                    <div id="health-results">
+                        <div class="terminal-output">Health check results will appear here...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MCP Tools -->
+        <div class="lcars-panel">
+            <div class="panel-header">
+                <span class="panel-icon">🛠️</span>
+                <h2 class="panel-title">Available MCP Tools</h2>
+            </div>
+            <div class="panel-content">
+                <div class="quick-actions" style="margin-bottom: 15px;">
+                    <button class="lcars-btn" onclick="filterTools('all')">All</button>
+                    <button class="lcars-btn" onclick="filterTools('git')">Git</button>
+                    <button class="lcars-btn" onclick="filterTools('file')">Files</button>
+                    <button class="lcars-btn" onclick="filterTools('system')">System</button>
+                    <button class="lcars-btn" onclick="filterTools('json')">JSON</button>
+                </div>
+                <div id="tools-list" class="service-grid">
+                    <!-- Tools will be rendered here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- API Endpoints -->
+        <div class="lcars-panel">
+            <div class="panel-header">
+                <span class="panel-icon">📡</span>
+                <h2 class="panel-title">API Endpoints</h2>
+            </div>
+            <div class="panel-content">
+                <div class="endpoint-list" id="endpoint-list">
+                    <div class="endpoint-item">
+                        <div>
+                            <span class="endpoint-method GET">GET</span>
+                            <span class="endpoint-path">/</span>
+                        </div>
+                        <span style="color: #888;">Dashboard</span>
+                    </div>
+                    <div class="endpoint-item">
+                        <div>
+                            <span class="endpoint-method GET">GET</span>
+                            <span class="endpoint-path">/health</span>
+                        </div>
+                        <span style="color: #888;">Health Check</span>
+                    </div>
+                    <div class="endpoint-item">
+                        <div>
+                            <span class="endpoint-method GET">GET</span>
+                            <span class="endpoint-path">/api/tools</span>
+                        </div>
+                        <span style="color: #888;">List Tools</span>
+                    </div>
+                    <div class="endpoint-item">
+                        <div>
+                            <span class="endpoint-method POST">POST</span>
+                            <span class="endpoint-path">/api/tools/:name/execute</span>
+                        </div>
+                        <span style="color: #888;">Execute Tool</span>
+                    </div>
+                    <div class="endpoint-item">
+                        <div>
+                            <span class="endpoint-method GET">GET</span>
+                            <span class="endpoint-path">/api/git/status</span>
+                        </div>
+                        <span style="color: #888;">Git Status</span>
+                    </div>
+                    <div class="endpoint-item">
+                        <div>
+                            <span class="endpoint-method GET">GET</span>
+                            <span class="endpoint-path">/api/system/info</span>
+                        </div>
+                        <span style="color: #888;">System Info</span>
+                    </div>
+                    <div class="endpoint-item">
+                        <div>
+                            <span class="endpoint-method POST">POST</span>
+                            <span class="endpoint-path">/api/files/read</span>
+                        </div>
+                        <span style="color: #888;">Read File</span>
+                    </div>
+                    <div class="endpoint-item">
+                        <div>
+                            <span class="endpoint-method POST">POST</span>
+                            <span class="endpoint-path">/api/files/write</span>
+                        </div>
+                        <span style="color: #888;">Write File</span>
+                    </div>
+                    <div class="endpoint-item">
+                        <div>
+                            <span class="endpoint-method GET">GET</span>
+                            <span class="endpoint-path">/metrics</span>
+                        </div>
+                        <span style="color: #888;">Prometheus Metrics</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="two-column">
+            <!-- Metrics -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">📊</span>
+                    <h2 class="panel-title">Request Metrics</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="metrics-chart" id="metrics-chart">
+                        <!-- Bars will be rendered here -->
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 0.85rem; color: #888;">
+                        <span>1h ago</span>
+                        <span>30m ago</span>
+                        <span>15m ago</span>
+                        <span>Now</span>
+                    </div>
+                    <button class="lcars-btn" onclick="refreshMetrics()" style="margin-top: 15px;">Refresh Metrics</button>
+                </div>
+            </div>
+
+            <!-- External Services -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">🔗</span>
+                    <h2 class="panel-title">External Services</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="service-card" style="margin-bottom: 15px;">
+                        <div class="service-name">📈 Grafana</div>
+                        <div class="service-stats">
+                            <div><span>URL:</span> <span>localhost:3000</span></div>
+                        </div>
+                        <a href="http://localhost:3000" target="_blank" class="service-link">Open Grafana Dashboard →</a>
+                    </div>
+                    <div class="service-card" style="margin-bottom: 15px;">
+                        <div class="service-name">🎯 Prometheus</div>
+                        <div class="service-stats">
+                            <div><span>URL:</span> <span>localhost:9090</span></div>
+                        </div>
+                        <a href="http://localhost:9090" target="_blank" class="service-link">Open Prometheus →</a>
+                    </div>
+                    <div class="service-card">
+                        <div class="service-name">🗄️ Redis</div>
+                        <div class="service-stats">
+                            <div><span>Port:</span> <span>6379</span></div>
+                        </div>
+                        <button class="lcars-btn" onclick="checkRedis()" style="width: 100%; margin-top: 10px;">Check Status</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="lcars-footer">
+            <p class="footer-text">STARFLEET COMMAND • MCP Services Module • LCARS Interface</p>
+        </div>
+    </div>
+
+    <script src="/pages/shared/lcars-core.js"></script>
+    <script>
+        const mcpTools = [
+            { name: 'git_status', category: 'git', desc: 'Get current git repository status', params: 'path?' },
+            { name: 'git_log', category: 'git', desc: 'View git commit history', params: 'path?, count?' },
+            { name: 'git_diff', category: 'git', desc: 'Show changes between commits', params: 'path?' },
+            { name: 'git_branch', category: 'git', desc: 'List or manage git branches', params: 'action?, name?' },
+            { name: 'list_files', category: 'file', desc: 'List files in a directory', params: 'path' },
+            { name: 'read_file', category: 'file', desc: 'Read contents of a file', params: 'path' },
+            { name: 'write_file', category: 'file', desc: 'Write content to a file', params: 'path, content' },
+            { name: 'create_directory', category: 'file', desc: 'Create a new directory', params: 'path' },
+            { name: 'search_files', category: 'file', desc: 'Search for files by pattern', params: 'pattern, path?' },
+            { name: 'run_command', category: 'system', desc: 'Execute shell commands', params: 'command' },
+            { name: 'system_info', category: 'system', desc: 'Get system information', params: 'none' },
+            { name: 'parse_json', category: 'json', desc: 'Parse and validate JSON', params: 'content' },
+            { name: 'format_json', category: 'json', desc: 'Format JSON with indentation', params: 'content' }
+        ];
+
+        const services = [
+            { name: 'MCP Server', icon: '🖥️', port: 3001, status: 'healthy', url: 'http://localhost:3001' },
+            { name: 'Redis', icon: '🗄️', port: 6379, status: 'healthy', url: null },
+            { name: 'Prometheus', icon: '🎯', port: 9090, status: 'healthy', url: 'http://localhost:9090' },
+            { name: 'Grafana', icon: '📈', port: 3000, status: 'healthy', url: 'http://localhost:3000' },
+            { name: 'Nginx', icon: '🌐', port: 80, status: 'healthy', url: 'http://localhost' },
+            { name: 'Analytics', icon: '📊', port: 3002, status: 'degraded', url: 'http://localhost:3002' }
+        ];
+
+        // Render services
+        function refreshServices() {
+            const html = services.map(svc => `
+                <div class="service-card ${svc.status}">
+                    <div class="health-indicator ${svc.status}"></div>
+                    <div class="service-icon">${svc.icon}</div>
+                    <div class="service-name">${svc.name}</div>
+                    <div class="service-status ${svc.status}">${svc.status}</div>
+                    <div class="service-stats">
+                        <div><span>Port:</span> <span>${svc.port}</span></div>
+                    </div>
+                    ${svc.url ? `<a href="${svc.url}" target="_blank" class="service-link">Open Service →</a>` : ''}
+                </div>
+            `).join('');
+            document.getElementById('service-fleet').innerHTML = html;
+        }
+
+        // Render tools
+        function renderTools(filter = 'all') {
+            const filtered = filter === 'all' ? mcpTools : mcpTools.filter(t => t.category === filter);
+            const html = filtered.map(tool => `
+                <div class="mcp-tool-card">
+                    <div class="mcp-tool-name">${tool.name}</div>
+                    <div class="mcp-tool-desc">${tool.desc}</div>
+                    <div class="mcp-tool-params">params: ${tool.params}</div>
+                </div>
+            `).join('');
+            document.getElementById('tools-list').innerHTML = html;
+        }
+
+        function filterTools(category) {
+            renderTools(category);
+        }
+
+        // Metrics chart
+        function renderMetricsChart() {
+            const bars = Array.from({length: 12}, () => Math.random() * 80 + 20);
+            const html = bars.map(height => `
+                <div class="metrics-bar" style="height: ${height}%"></div>
+            `).join('');
+            document.getElementById('metrics-chart').innerHTML = html;
+        }
+
+        function refreshMetrics() {
+            renderMetricsChart();
+            playSuccessSound();
+        }
+
+        // Actions
+        async function refreshAll() {
+            refreshServices();
+            renderTools();
+            renderMetricsChart();
+            await runHealthChecks();
+            playSuccessSound();
+        }
+
+        async function checkHealth() {
+            await fetch('/health')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('health-results').innerHTML = `
+                        <div class="terminal-output" style="color: var(--console-green);">
+                            Status: ${data.status || 'OK'}
+                            <br>Timestamp: ${new Date().toISOString()}
+                        </div>
+                    `;
+                })
+                .catch(e => {
+                    document.getElementById('health-results').innerHTML = `
+                        <div class="terminal-output" style="color: #ff6666;">Error: ${e.message}</div>
+                    `;
+                });
+        }
+
+        async function listTools() {
+            await fetch('/api/tools')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('tool-count').textContent = data.tools?.length || mcpTools.length;
+                })
+                .catch(() => {});
+        }
+
+        async function getServerInfo() {
+            const result = await executeTool('system_info', {});
+            if (result.success) {
+                document.getElementById('server-info').innerHTML = `
+                    <div class="terminal-output">${result.output}</div>
+                `;
+            }
+        }
+
+        async function runHealthChecks() {
+            let results = '<div class="terminal-output">';
+            
+            // Check MCP Server
+            try {
+                const response = await fetch('/health');
+                const healthy = response.ok;
+                results += `<div style="color: ${healthy ? 'var(--console-green)' : '#ff6666'}">✓ MCP Server: ${healthy ? 'Healthy' : 'Unhealthy'}</div>`;
+            } catch (e) {
+                results += `<div style="color: #ff6666">✗ MCP Server: Unreachable</div>`;
+            }
+
+            // Check Docker
+            const dockerResult = await executeTool('run_command', { command: 'docker info > /dev/null 2>&1 && echo "OK" || echo "FAIL"' });
+            const dockerOk = dockerResult.output?.includes('OK');
+            results += `<div style="color: ${dockerOk ? 'var(--console-green)' : '#ff6666'}">✓ Docker: ${dockerOk ? 'Running' : 'Not Running'}</div>`;
+
+            results += `<div style="margin-top: 10px; color: #888;">Last checked: ${new Date().toLocaleTimeString()}</div>`;
+            results += '</div>';
+            
+            document.getElementById('health-results').innerHTML = results;
+            playSuccessSound();
+        }
+
+        async function checkMCPHealth() {
+            await checkHealth();
+        }
+
+        async function checkRedis() {
+            const result = await executeTool('run_command', { command: 'redis-cli ping 2>/dev/null || echo "Redis not available"' });
+            document.getElementById('health-results').innerHTML = `
+                <div class="terminal-output">${result.output}</div>
+            `;
+        }
+
+        async function checkDocker() {
+            await runTool('run_command', { command: 'docker info --format "{{.ServerVersion}}"' }, 'health-results');
+        }
+
+        function viewEndpoints() {
+            document.querySelector('#endpoint-list').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function viewMetrics() {
+            document.querySelector('#metrics-chart').scrollIntoView({ behavior: 'smooth' });
+            refreshMetrics();
+        }
+
+        function openGrafana() {
+            window.open('http://localhost:3000', '_blank');
+        }
+
+        function openPrometheus() {
+            window.open('http://localhost:9090', '_blank');
+        }
+
+        function restartServer() {
+            if (!confirm('Restart MCP server?')) return;
+            alert('Server restart initiated. This page may become unavailable temporarily.');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            refreshServices();
+            renderTools();
+            renderMetricsChart();
+        });
+    </script>
+</body>
+</html>

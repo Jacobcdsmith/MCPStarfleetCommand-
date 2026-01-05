@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Tools - STARFLEET COMMAND</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/pages/shared/lcars-styles.css">
+    <style>
+        .ping-result {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .ping-stat {
+            background: rgba(0,50,100,0.4);
+            border: 2px solid var(--lcars-blue);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .ping-stat-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: var(--console-green);
+            text-shadow: 0 0 10px var(--console-green);
+        }
+
+        .ping-stat-label {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.9rem;
+            color: var(--lcars-light-blue);
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+
+        .ping-stat.error .ping-stat-value {
+            color: #ff6666;
+            text-shadow: 0 0 10px #ff6666;
+        }
+
+        .host-card {
+            background: linear-gradient(135deg, rgba(0,80,120,0.4) 0%, rgba(0,40,80,0.6) 100%);
+            border: 2px solid var(--lcars-blue);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .host-card.online {
+            border-color: var(--console-green);
+        }
+
+        .host-card.offline {
+            border-color: #ff6666;
+        }
+
+        .host-status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--console-green);
+            animation: pulse 2s infinite;
+        }
+
+        .host-status-dot.offline {
+            background: #ff6666;
+        }
+
+        .host-info {
+            flex: 1;
+        }
+
+        .host-name {
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            color: var(--enterprise-gold);
+        }
+
+        .host-ip {
+            font-family: 'Courier New', monospace;
+            color: var(--lcars-light-blue);
+            font-size: 0.9rem;
+        }
+
+        .port-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .port-item {
+            background: rgba(0,40,80,0.5);
+            border: 1px solid var(--lcars-blue);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .port-item.open {
+            border-color: var(--console-green);
+        }
+
+        .port-item.closed {
+            border-color: #ff6666;
+        }
+
+        .port-number {
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            color: var(--enterprise-gold);
+        }
+
+        .port-service {
+            font-size: 0.85rem;
+            color: var(--lcars-light-blue);
+        }
+
+        .port-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .port-status.open {
+            background: rgba(0,255,100,0.2);
+            color: var(--console-green);
+        }
+
+        .port-status.closed {
+            background: rgba(255,100,100,0.2);
+            color: #ff6666;
+        }
+
+        .headers-display {
+            background: rgba(0,20,40,0.8);
+            border: 1px solid var(--lcars-blue);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+        }
+
+        .header-row {
+            display: flex;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(85,85,255,0.2);
+        }
+
+        .header-key {
+            color: var(--enterprise-gold);
+            width: 200px;
+            flex-shrink: 0;
+        }
+
+        .header-value {
+            color: var(--console-green);
+            word-break: break-all;
+        }
+
+        .dns-record {
+            background: rgba(0,40,80,0.4);
+            border-left: 4px solid var(--enterprise-gold);
+            padding: 10px 15px;
+            margin-bottom: 8px;
+        }
+
+        .dns-type {
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            color: var(--enterprise-gold);
+            display: inline-block;
+            width: 60px;
+        }
+
+        .dns-value {
+            color: var(--console-green);
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="lcars-container">
+        <!-- Header -->
+        <div class="lcars-header">
+            <div class="header-left">
+                <a href="/pages/index.html" class="back-btn">← BACK</a>
+                <div>
+                    <h1 class="page-title">🌐 Network Tools</h1>
+                    <p class="page-subtitle">Network Diagnostics & Monitoring</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="status-badge">
+                    <div class="status-dot"></div>
+                    <span class="status-text">ONLINE</span>
+                </div>
+                <span id="stardate" class="stardate"></span>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="lcars-panel">
+            <div class="panel-header">
+                <span class="panel-icon">⚡</span>
+                <h2 class="panel-title">Quick Actions</h2>
+            </div>
+            <div class="panel-content">
+                <div class="quick-actions">
+                    <button class="lcars-btn primary" onclick="quickPing('8.8.8.8')">🏓 Ping Google DNS</button>
+                    <button class="lcars-btn" onclick="quickPing('localhost')">🏠 Ping Localhost</button>
+                    <button class="lcars-btn" onclick="getPublicIP()">🌍 Get Public IP</button>
+                    <button class="lcars-btn" onclick="checkInternetConnectivity()">📡 Check Internet</button>
+                    <button class="lcars-btn" onclick="networkInterfaces()">🔌 Interfaces</button>
+                    <button class="lcars-btn" onclick="routingTable()">🗺️ Routing Table</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="two-column">
+            <!-- Ping Tool -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">🏓</span>
+                    <h2 class="panel-title">Ping</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="form-group">
+                        <label class="form-label">Host / IP Address</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="ping-host" class="lcars-input" placeholder="google.com or 8.8.8.8">
+                            <select id="ping-count" class="lcars-input" style="width: 100px;">
+                                <option value="4">4 pings</option>
+                                <option value="8">8 pings</option>
+                                <option value="16">16 pings</option>
+                            </select>
+                            <button class="lcars-btn primary" onclick="pingHost()">Ping</button>
+                        </div>
+                    </div>
+                    <div class="quick-actions" style="margin: 15px 0;">
+                        <button class="lcars-btn" onclick="setPingHost('google.com')">Google</button>
+                        <button class="lcars-btn" onclick="setPingHost('cloudflare.com')">Cloudflare</button>
+                        <button class="lcars-btn" onclick="setPingHost('github.com')">GitHub</button>
+                        <button class="lcars-btn" onclick="setPingHost('localhost')">Localhost</button>
+                    </div>
+                    <div id="ping-output">
+                        <div class="terminal-output">Ping results will appear here...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DNS Lookup -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">📖</span>
+                    <h2 class="panel-title">DNS Lookup</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="form-group">
+                        <label class="form-label">Domain Name</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="dns-host" class="lcars-input" placeholder="example.com">
+                            <button class="lcars-btn primary" onclick="dnsLookup()">Lookup</button>
+                        </div>
+                    </div>
+                    <div class="quick-actions" style="margin: 15px 0;">
+                        <button class="lcars-btn" onclick="nsLookup()">NS Records</button>
+                        <button class="lcars-btn" onclick="mxLookup()">MX Records</button>
+                        <button class="lcars-btn" onclick="txtLookup()">TXT Records</button>
+                        <button class="lcars-btn" onclick="reverseLookup()">Reverse DNS</button>
+                    </div>
+                    <div id="dns-output">
+                        <div class="terminal-output">DNS lookup results will appear here...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HTTP Client -->
+        <div class="lcars-panel">
+            <div class="panel-header">
+                <span class="panel-icon">🌍</span>
+                <h2 class="panel-title">HTTP Client (curl)</h2>
+            </div>
+            <div class="panel-content">
+                <div class="form-group">
+                    <label class="form-label">URL</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="curl-url" class="lcars-input" placeholder="https://api.example.com/endpoint" style="flex: 1;">
+                        <select id="curl-method" class="lcars-input" style="width: 100px;">
+                            <option value="GET">GET</option>
+                            <option value="POST">POST</option>
+                            <option value="PUT">PUT</option>
+                            <option value="DELETE">DELETE</option>
+                            <option value="HEAD">HEAD</option>
+                        </select>
+                        <button class="lcars-btn primary" onclick="curlRequest()">Send</button>
+                    </div>
+                </div>
+                <div class="quick-actions" style="margin: 15px 0;">
+                    <button class="lcars-btn" onclick="curlHeaders()">Get Headers</button>
+                    <button class="lcars-btn" onclick="curlVerbose()">Verbose</button>
+                    <button class="lcars-btn" onclick="setCurlUrl('https://httpbin.org/get')">httpbin</button>
+                    <button class="lcars-btn" onclick="setCurlUrl('https://api.github.com')">GitHub API</button>
+                    <button class="lcars-btn" onclick="setCurlUrl('http://localhost:3001/health')">Local Health</button>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Request Body (for POST/PUT)</label>
+                    <textarea id="curl-body" class="lcars-textarea" rows="3" placeholder='{"key": "value"}'></textarea>
+                </div>
+                <div id="curl-output" style="margin-top: 15px;">
+                    <div class="terminal-output">HTTP response will appear here...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="two-column">
+            <!-- Port Scanner -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">🔌</span>
+                    <h2 class="panel-title">Port Scanner</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="form-group">
+                        <label class="form-label">Host</label>
+                        <input type="text" id="port-host" class="lcars-input" placeholder="localhost" value="localhost">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Port Range</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="number" id="port-start" class="lcars-input" placeholder="1" value="1" style="width: 100px;">
+                            <span style="color: var(--lcars-light-blue); padding: 10px;">to</span>
+                            <input type="number" id="port-end" class="lcars-input" placeholder="1024" value="100" style="width: 100px;">
+                            <button class="lcars-btn primary" onclick="scanPorts()">Scan</button>
+                        </div>
+                    </div>
+                    <div class="quick-actions" style="margin: 15px 0;">
+                        <button class="lcars-btn" onclick="scanCommonPorts()">Common Ports</button>
+                        <button class="lcars-btn" onclick="scanWebPorts()">Web Ports</button>
+                        <button class="lcars-btn" onclick="checkLocalServices()">Local Services</button>
+                    </div>
+                    <div id="port-output">
+                        <div class="terminal-output">Port scan results will appear here...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Network Stats -->
+            <div class="lcars-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">📊</span>
+                    <h2 class="panel-title">Network Statistics</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="quick-actions" style="margin-bottom: 15px;">
+                        <button class="lcars-btn" onclick="netstatListening()">Listening Ports</button>
+                        <button class="lcars-btn" onclick="netstatConnections()">All Connections</button>
+                        <button class="lcars-btn" onclick="netstatEstablished()">Established</button>
+                        <button class="lcars-btn" onclick="arpTable()">ARP Table</button>
+                    </div>
+                    <div id="netstat-output">
+                        <div class="terminal-output">Network statistics will appear here...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Traceroute -->
+        <div class="lcars-panel">
+            <div class="panel-header">
+                <span class="panel-icon">🗺️</span>
+                <h2 class="panel-title">Traceroute</h2>
+            </div>
+            <div class="panel-content">
+                <div class="form-group">
+                    <label class="form-label">Destination Host</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="traceroute-host" class="lcars-input" placeholder="google.com" style="flex: 1;">
+                        <button class="lcars-btn primary" onclick="traceroute()">Trace</button>
+                    </div>
+                </div>
+                <div class="quick-actions" style="margin: 15px 0;">
+                    <button class="lcars-btn" onclick="setTraceHost('google.com')">Google</button>
+                    <button class="lcars-btn" onclick="setTraceHost('cloudflare.com')">Cloudflare</button>
+                    <button class="lcars-btn" onclick="setTraceHost('8.8.8.8')">Google DNS</button>
+                </div>
+                <div id="traceroute-output">
+                    <div class="terminal-output">Traceroute results will appear here...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Saved Hosts -->
+        <div class="lcars-panel">
+            <div class="panel-header">
+                <span class="panel-icon">📋</span>
+                <h2 class="panel-title">Monitored Hosts</h2>
+            </div>
+            <div class="panel-content">
+                <div id="saved-hosts">
+                    <!-- Saved hosts will be rendered here -->
+                </div>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label class="form-label">Add Host to Monitor</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="new-host-name" class="lcars-input" placeholder="Name" style="width: 150px;">
+                        <input type="text" id="new-host-address" class="lcars-input" placeholder="IP or hostname" style="flex: 1;">
+                        <button class="lcars-btn success" onclick="addHost()">Add Host</button>
+                    </div>
+                </div>
+                <button class="lcars-btn" onclick="pingAllHosts()" style="margin-top: 10px;">🔄 Ping All Hosts</button>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="lcars-footer">
+            <p class="footer-text">STARFLEET COMMAND • Network Tools Module • LCARS Interface</p>
+        </div>
+    </div>
+
+    <script src="/pages/shared/lcars-core.js"></script>
+    <script>
+        // State
+        let monitoredHosts = [
+            { name: 'Google DNS', address: '8.8.8.8', status: 'unknown' },
+            { name: 'Cloudflare DNS', address: '1.1.1.1', status: 'unknown' },
+            { name: 'Localhost', address: '127.0.0.1', status: 'unknown' }
+        ];
+
+        // Ping
+        function setPingHost(host) {
+            document.getElementById('ping-host').value = host;
+        }
+
+        async function pingHost() {
+            const host = document.getElementById('ping-host').value;
+            const count = document.getElementById('ping-count').value;
+            if (!host) {
+                alert('Please enter a host');
+                return;
+            }
+            await runTool('run_command', { command: `ping -c ${count} ${host} 2>&1 || ping -n ${count} ${host}` }, 'ping-output');
+        }
+
+        async function quickPing(host) {
+            document.getElementById('ping-host').value = host;
+            await pingHost();
+        }
+
+        // DNS
+        async function dnsLookup() {
+            const host = document.getElementById('dns-host').value;
+            if (!host) {
+                alert('Please enter a domain');
+                return;
+            }
+            await runTool('run_command', { command: `nslookup ${host} 2>/dev/null || host ${host} 2>/dev/null || dig ${host}` }, 'dns-output');
+        }
+
+        async function nsLookup() {
+            const host = document.getElementById('dns-host').value || 'google.com';
+            await runTool('run_command', { command: `nslookup -type=NS ${host} 2>/dev/null || dig NS ${host}` }, 'dns-output');
+        }
+
+        async function mxLookup() {
+            const host = document.getElementById('dns-host').value || 'google.com';
+            await runTool('run_command', { command: `nslookup -type=MX ${host} 2>/dev/null || dig MX ${host}` }, 'dns-output');
+        }
+
+        async function txtLookup() {
+            const host = document.getElementById('dns-host').value || 'google.com';
+            await runTool('run_command', { command: `nslookup -type=TXT ${host} 2>/dev/null || dig TXT ${host}` }, 'dns-output');
+        }
+
+        async function reverseLookup() {
+            const host = document.getElementById('dns-host').value || '8.8.8.8';
+            await runTool('run_command', { command: `nslookup ${host} 2>/dev/null || host ${host}` }, 'dns-output');
+        }
+
+        // HTTP/Curl
+        function setCurlUrl(url) {
+            document.getElementById('curl-url').value = url;
+        }
+
+        async function curlRequest() {
+            const url = document.getElementById('curl-url').value;
+            const method = document.getElementById('curl-method').value;
+            const body = document.getElementById('curl-body').value;
+            
+            if (!url) {
+                alert('Please enter a URL');
+                return;
+            }
+            
+            let cmd = `curl -s -X ${method}`;
+            if (body && (method === 'POST' || method === 'PUT')) {
+                cmd += ` -H "Content-Type: application/json" -d '${body}'`;
+            }
+            cmd += ` "${url}"`;
+            
+            await runTool('run_command', { command: cmd }, 'curl-output');
+        }
+
+        async function curlHeaders() {
+            const url = document.getElementById('curl-url').value || 'https://httpbin.org/get';
+            await runTool('run_command', { command: `curl -sI "${url}"` }, 'curl-output');
+        }
+
+        async function curlVerbose() {
+            const url = document.getElementById('curl-url').value || 'https://httpbin.org/get';
+            await runTool('run_command', { command: `curl -sv "${url}" 2>&1 | head -50` }, 'curl-output');
+        }
+
+        // Port Scanner
+        async function scanPorts() {
+            const host = document.getElementById('port-host').value || 'localhost';
+            const start = document.getElementById('port-start').value || '1';
+            const end = document.getElementById('port-end').value || '100';
+            
+            await runTool('run_command', { 
+                command: `for port in $(seq ${start} ${end}); do (echo >/dev/tcp/${host}/$port) 2>/dev/null && echo "Port $port: OPEN"; done || echo "Port scan requires bash. Trying netcat..." && nc -zv ${host} ${start}-${end} 2>&1` 
+            }, 'port-output');
+        }
+
+        async function scanCommonPorts() {
+            const host = document.getElementById('port-host').value || 'localhost';
+            const ports = [22, 80, 443, 3000, 3001, 5432, 6379, 8080, 9090];
+            
+            document.getElementById('port-output').innerHTML = '<div class="terminal-output">Scanning common ports...</div>';
+            
+            for (const port of ports) {
+                const result = await executeTool('run_command', { 
+                    command: `(echo >/dev/tcp/${host}/${port}) 2>/dev/null && echo "Port ${port}: OPEN" || echo "Port ${port}: closed"` 
+                });
+                addToOutput('port-output', result.output);
+            }
+        }
+
+        async function scanWebPorts() {
+            const host = document.getElementById('port-host').value || 'localhost';
+            await runTool('run_command', { 
+                command: `for port in 80 443 3000 3001 8000 8080 8443 9000; do (echo >/dev/tcp/${host}/$port) 2>/dev/null && echo "Port $port: OPEN" || echo "Port $port: closed"; done` 
+            }, 'port-output');
+        }
+
+        async function checkLocalServices() {
+            await runTool('run_command', { command: 'netstat -tlnp 2>/dev/null || ss -tlnp' }, 'port-output');
+        }
+
+        // Network Stats
+        async function netstatListening() {
+            await runTool('run_command', { command: 'netstat -tlnp 2>/dev/null || ss -tlnp' }, 'netstat-output');
+        }
+
+        async function netstatConnections() {
+            await runTool('run_command', { command: 'netstat -an 2>/dev/null | head -30 || ss -an | head -30' }, 'netstat-output');
+        }
+
+        async function netstatEstablished() {
+            await runTool('run_command', { command: 'netstat -an 2>/dev/null | grep ESTABLISHED || ss -an | grep ESTAB' }, 'netstat-output');
+        }
+
+        async function arpTable() {
+            await runTool('run_command', { command: 'arp -a 2>/dev/null || ip neigh' }, 'netstat-output');
+        }
+
+        // Traceroute
+        function setTraceHost(host) {
+            document.getElementById('traceroute-host').value = host;
+        }
+
+        async function traceroute() {
+            const host = document.getElementById('traceroute-host').value;
+            if (!host) {
+                alert('Please enter a host');
+                return;
+            }
+            await runTool('run_command', { command: `traceroute ${host} 2>/dev/null || tracert ${host}` }, 'traceroute-output');
+        }
+
+        // Network Info
+        async function getPublicIP() {
+            await runTool('run_command', { command: 'curl -s https://api.ipify.org && echo ""' }, 'ping-output');
+        }
+
+        async function checkInternetConnectivity() {
+            await runTool('run_command', { command: 'ping -c 1 8.8.8.8 > /dev/null 2>&1 && echo "Internet: CONNECTED ✓" || echo "Internet: DISCONNECTED ✗"' }, 'ping-output');
+        }
+
+        async function networkInterfaces() {
+            await runTool('run_command', { command: 'ip addr 2>/dev/null || ifconfig' }, 'netstat-output');
+        }
+
+        async function routingTable() {
+            await runTool('run_command', { command: 'ip route 2>/dev/null || netstat -rn' }, 'netstat-output');
+        }
+
+        // Monitored Hosts
+        function renderHosts() {
+            const html = monitoredHosts.map((host, index) => `
+                <div class="host-card ${host.status}">
+                    <div class="host-status-dot ${host.status === 'offline' ? 'offline' : ''}"></div>
+                    <div class="host-info">
+                        <div class="host-name">${host.name}</div>
+                        <div class="host-ip">${host.address}</div>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="lcars-btn" onclick="pingMonitoredHost(${index})">Ping</button>
+                        <button class="lcars-btn danger" onclick="removeHost(${index})">Remove</button>
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('saved-hosts').innerHTML = html || '<p style="color: #888;">No monitored hosts</p>';
+        }
+
+        function addHost() {
+            const name = document.getElementById('new-host-name').value;
+            const address = document.getElementById('new-host-address').value;
+            if (!name || !address) {
+                alert('Please enter both name and address');
+                return;
+            }
+            monitoredHosts.push({ name, address, status: 'unknown' });
+            renderHosts();
+            document.getElementById('new-host-name').value = '';
+            document.getElementById('new-host-address').value = '';
+            playSuccessSound();
+        }
+
+        function removeHost(index) {
+            monitoredHosts.splice(index, 1);
+            renderHosts();
+        }
+
+        async function pingMonitoredHost(index) {
+            const host = monitoredHosts[index];
+            const result = await executeTool('run_command', { 
+                command: `ping -c 1 ${host.address} > /dev/null 2>&1 && echo "online" || echo "offline"` 
+            });
+            host.status = result.output?.includes('online') ? 'online' : 'offline';
+            renderHosts();
+        }
+
+        async function pingAllHosts() {
+            for (let i = 0; i < monitoredHosts.length; i++) {
+                await pingMonitoredHost(i);
+            }
+            playSuccessSound();
+        }
+
+        function addToOutput(elementId, text) {
+            const el = document.getElementById(elementId);
+            const current = el.querySelector('.terminal-output');
+            if (current && current.textContent.includes('will appear')) {
+                el.innerHTML = '';
+            }
+            const line = document.createElement('div');
+            line.textContent = text;
+            line.style.padding = '5px 0';
+            line.style.borderBottom = '1px solid rgba(85,85,255,0.2)';
+            el.appendChild(line);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderHosts();
+        });
+    </script>
+</body>
+</html>

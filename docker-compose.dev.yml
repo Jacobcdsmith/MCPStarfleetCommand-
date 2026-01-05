@@ -1,0 +1,25 @@
+version: '3.9'
+
+# Development override for docker-compose
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  mcp-server:
+    build:
+      target: development
+    environment:
+      - NODE_ENV=development
+      - DEBUG=1
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run dev
+
+  analytics-service:
+    environment:
+      - NODE_ENV=development
+      - DEBUG=1
+    volumes:
+      - ./analytics:/app
+      - /app/node_modules
+    command: npm run dev

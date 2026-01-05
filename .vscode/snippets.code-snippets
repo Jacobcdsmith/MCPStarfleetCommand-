@@ -1,0 +1,116 @@
+{
+  "MCP Tool Definition": {
+    "scope": "javascript",
+    "prefix": "mcp-tool",
+    "body": [
+      "server.setRequestHandler(CallToolRequestSchema, async (request) => {",
+      "  const { name, arguments: args } = request.params;",
+      "  ",
+      "  if (name === \"${1:tool_name}\") {",
+      "    try {",
+      "      // Input validation",
+      "      const schema = z.object({",
+      "        ${2:param}: z.string().describe(\"${3:Description}\")",
+      "      });",
+      "      const { ${2:param} } = schema.parse(args);",
+      "      ",
+      "      // Tool implementation",
+      "      ${4:// TODO: Implement tool logic}",
+      "      ",
+      "      return {",
+      "        content: [",
+      "          {",
+      "            type: \"text\",",
+      "            text: `${5:Result message}`",
+      "          }",
+      "        ]",
+      "      };",
+      "    } catch (error) {",
+      "      logger.error(`Error in ${1:tool_name}:`, error);",
+      "      return {",
+      "        content: [",
+      "          {",
+      "            type: \"text\",",
+      "            text: `Error: ${error.message}`",
+      "          }",
+      "        ],",
+      "        isError: true",
+      "      };",
+      "    }",
+      "  }",
+      "});"
+    ],
+    "description": "Create a new MCP tool handler"
+  },
+  "MCP Tool List Entry": {
+    "scope": "javascript",
+    "prefix": "mcp-tool-list",
+    "body": [
+      "{",
+      "  name: \"${1:tool_name}\",",
+      "  description: \"${2:Tool description}\",",
+      "  inputSchema: {",
+      "    type: \"object\",",
+      "    properties: {",
+      "      ${3:param}: {",
+      "        type: \"${4:string}\",",
+      "        description: \"${5:Parameter description}\"",
+      "      }",
+      "    },",
+      "    required: [\"${3:param}\"]",
+      "  }",
+      "},"
+    ],
+    "description": "Create a tool list entry for MCP server"
+  },
+  "Logger Statement": {
+    "scope": "javascript",
+    "prefix": "log",
+    "body": [
+      "logger.${1|info,error,debug|}('${2:message}', ${3:data});"
+    ],
+    "description": "Add a logger statement"
+  },
+  "Safe Command Execution": {
+    "scope": "javascript",
+    "prefix": "safe-exec",
+    "body": [
+      "const result = safeExec('${1:command}', { ${2:options} });",
+      "if (!result.success) {",
+      "  logger.error('Command failed:', result.error);",
+      "  return {",
+      "    content: [{ type: \"text\", text: `Error: ${result.error}` }],",
+      "    isError: true",
+      "  };",
+      "}",
+      "logger.info('Command output:', result.output);"
+    ],
+    "description": "Execute a command safely with error handling"
+  },
+  "HTTP Route Handler": {
+    "scope": "javascript",
+    "prefix": "route",
+    "body": [
+      "app.${1|get,post,put,delete|}('/${2:path}', async (req, res) => {",
+      "  try {",
+      "    ${3:// Route implementation}",
+      "    res.json({ success: true, data: ${4:result} });",
+      "  } catch (error) {",
+      "    logger.error('Route error:', error);",
+      "    res.status(500).json({ success: false, error: error.message });",
+      "  }",
+      "});"
+    ],
+    "description": "Create an Express route handler"
+  },
+  "Zod Schema": {
+    "scope": "javascript",
+    "prefix": "zod-schema",
+    "body": [
+      "const ${1:schemaName} = z.object({",
+      "  ${2:property}: z.${3|string,number,boolean,array,object|}()${4:.optional()}${5:.describe(\"${6:Description}\")},",
+      "});"
+    ],
+    "description": "Create a Zod validation schema"
+  }
+}
