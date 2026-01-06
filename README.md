@@ -114,4 +114,4 @@ Built with:
 
 ---
 
-**Transform your basic MCP server into something great!** 🚀
+**Transform your basic MCP server into something great!** 🚀# MCPStarfleetCommand-
