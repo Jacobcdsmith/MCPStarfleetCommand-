@@ -3271,8 +3271,14 @@
             // Check git status
             setTimeout(() => executeCommand('git_status'), 500);
             
-            // Check Docker containers
-            setTimeout(() => loadDockerContainers(), 1000);
+            // Check Docker containers (silent — daemon may not be running)
+            setTimeout(async () => {
+                try {
+                    const r = await fetch('/api/tools/execute', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ tool:'run_command', args:{command:'docker info --format "{{.ServerVersion}}" 2>/dev/null'} }) });
+                    const d = await r.json();
+                    if (d.success && d.output && d.output.trim()) loadDockerContainers();
+                } catch(e) {}
+            }, 1200);
             
             // List available tools
             setTimeout(async () => {
@@ -3473,12 +3479,12 @@
 
         function networkInfo() {
             playBeep();
-            executeCommand('run_command', { command: 'ip addr 2>/dev/null || ifconfig 2>/dev/null || ipconfig' });
+            executeCommand('run_command', { command: 'cat /proc/net/dev 2>/dev/null | awk \'NR>2{print $1, "rx:"$2"B", "tx:"$10"B"}\' || echo "Network interfaces unavailable"' });
         }
 
         function checkPorts() {
             playBeep();
-            executeCommand('run_command', { command: 'netstat -tlnp 2>/dev/null || netstat -an | findstr LISTENING' });
+            executeCommand('open_ports', {});
         }
 
         // =====================================================
@@ -3765,7 +3771,7 @@
             const host = prompt('Host to ping:', 'google.com');
             if (host) {
                 playBeep();
-                executeCommand('run_command', { command: `ping -c 4 ${host} 2>/dev/null || ping -n 4 ${host}` });
+                executeCommand('run_command', { command: `curl -s --connect-timeout 3 -o /dev/null -w "HTTP %{http_code} in %{time_connect}s\\n" https://${host} 2>/dev/null || curl -s --connect-timeout 3 -o /dev/null -w "HTTP %{http_code} in %{time_connect}s\\n" http://${host} 2>/dev/null || echo "Host ${host} unreachable"` });
             }
         }
 
@@ -3787,12 +3793,12 @@
 
         function networkInterfaces() {
             playBeep();
-            executeCommand('run_command', { command: 'ip addr 2>/dev/null || ifconfig 2>/dev/null || ipconfig /all' });
+            executeCommand('run_command', { command: 'cat /proc/net/dev 2>/dev/null | awk \'NR==1{next} NR==2{next} {gsub(/:/,"",$1); printf "%-12s rx:%-12s tx:%s\\n",$1,$2,$10}\' || echo "Network interface data unavailable"' });
         }
 
         function routeTable() {
             playBeep();
-            executeCommand('run_command', { command: 'ip route 2>/dev/null || route -n 2>/dev/null || route print' });
+            executeCommand('run_command', { command: 'echo "Kernel Route Table (/proc/net/route):" && cat /proc/net/route 2>/dev/null || echo "Route table unavailable"' });
         }
 
         function wgetDownload() {

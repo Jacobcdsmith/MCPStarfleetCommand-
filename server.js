@@ -490,11 +490,12 @@ const executeTool = async (name, args = {}) => {
         }
 
         // World-writable files in project
-        const ww = safeExec(`find ${saDir} -maxdepth 4 -perm /o+w -type f 2>/dev/null | grep -v node_modules | grep -v .git | head -20`);
+        const _saDir = (saDir && saDir !== 'null') ? saDir : '.';
+        const ww = safeExec(`find "${_saDir}" -maxdepth 4 -perm /o+w -type f 2>/dev/null | grep -v node_modules | grep -v .git | head -20`);
         report += `⚠️  WORLD-WRITABLE FILES:\n${ww.output || '✅ None found'}\n\n`;
 
         // Sensitive file patterns
-        const sf = safeExec(`find ${saDir} -maxdepth 5 \\( -name '.env' -o -name '*.pem' -o -name '*.key' -o -name 'id_rsa' -o -name '*.secret' -o -name 'credentials.*' \\) 2>/dev/null | grep -v node_modules | head -20`);
+        const sf = safeExec(`find "${_saDir}" -maxdepth 5 \\( -name '.env' -o -name '*.pem' -o -name '*.key' -o -name 'id_rsa' -o -name '*.secret' -o -name 'credentials.*' \\) 2>/dev/null | grep -v node_modules | head -20`);
         report += `🔑 SENSITIVE FILES:\n${sf.output || '✅ None found'}\n\n`;
 
         // Git history for secrets
