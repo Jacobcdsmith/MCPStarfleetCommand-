@@ -377,8 +377,8 @@ app.get('/api/tools', async (req, res) => {
 });
 
 // Start HTTP server
-app.listen(PORT, () => {
-  logger.info(`Dashboard server running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  logger.info(`Dashboard server running on http://0.0.0.0:${PORT}`);
 });
 
 // MCP Tools Handler
