@@ -210,9 +210,9 @@
         /* LCARS Panel Grid */
         .lcars-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 30px;
-            margin-bottom: 40px;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
         }
 
         .lcars-panel {
@@ -436,7 +436,7 @@
         }
 
         .lcars-terminal-container {
-            grid-column: 1 / -1;
+            /* terminal moved to right pane */
         }
 
         .lcars-terminal {
@@ -591,8 +591,8 @@
             background: linear-gradient(135deg, var(--lcars-gray) 0%, rgba(0,0,50,0.95) 100%);
             border: 3px solid var(--lcars-purple);
             border-radius: 25px 0 25px 0;
-            padding: 25px 35px;
-            margin-top: 40px;
+            padding: 20px 30px;
+            margin-top: 20px;
             position: relative;
             overflow: hidden;
         }
@@ -1351,12 +1351,6 @@
         }
 
         /* Responsive Design */
-        @media (max-width: 1200px) {
-            .lcars-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
         @media (max-width: 768px) {
             .lcars-container {
                 padding: 15px;
@@ -1406,6 +1400,192 @@
             opacity: 0;
             pointer-events: none;
         }
+
+        /* ============================================
+           SPLIT-PANE LAYOUT
+           ============================================ */
+
+        .split-pane-wrapper {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .left-pane {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .right-pane {
+            flex: 0 0 360px;
+            position: sticky;
+            top: 20px;
+            height: calc(100vh - 40px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .right-console-panel {
+            background: linear-gradient(135deg, #000011 0%, #000a1a 100%);
+            border: 3px solid var(--lcars-red);
+            border-radius: 20px 0 20px 0;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .right-console-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg,
+                var(--lcars-red) 0%,
+                var(--enterprise-gold) 33%,
+                var(--warp-core-blue) 66%,
+                var(--lcars-red) 100%);
+            animation: lcarsStrip 4s linear infinite;
+            z-index: 3;
+        }
+
+        .right-console-panel::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 50px;
+            height: 100%;
+            background: var(--lcars-red);
+            border-radius: 0 17px 17px 0;
+            opacity: 0.75;
+            z-index: 1;
+        }
+
+        .right-console-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 70px 14px 18px;
+            background: linear-gradient(90deg, rgba(0,0,50,0.9) 0%, transparent 100%);
+            border-bottom: 2px solid var(--lcars-red);
+            position: relative;
+            z-index: 2;
+            flex-shrink: 0;
+        }
+
+        .right-console-header h3 {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--enterprise-gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin: 0;
+            text-shadow: 0 0 10px var(--enterprise-gold);
+        }
+
+        .right-console-dots {
+            display: flex;
+            gap: 6px;
+            margin-right: 4px;
+        }
+
+        .right-console-output {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 70px 16px 18px;
+            position: relative;
+            z-index: 2;
+            font-family: 'Rajdhani', monospace;
+        }
+
+        .right-console-output::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .right-console-output::-webkit-scrollbar-track {
+            background: rgba(0,0,30,0.5);
+        }
+
+        .right-console-output::-webkit-scrollbar-thumb {
+            background: var(--lcars-red);
+            border-radius: 3px;
+        }
+
+        .right-console-actions {
+            border-top: 2px solid var(--lcars-red);
+            padding: 12px 70px 12px 18px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 2;
+            flex-shrink: 0;
+            background: rgba(0,0,20,0.6);
+        }
+
+        .console-action-btn {
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            font-size: 0.78rem;
+            padding: 7px 14px;
+            border: 1px solid var(--lcars-red);
+            border-radius: 12px 0 12px 0;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: rgba(100,30,30,0.3);
+            color: var(--lcars-light-blue);
+        }
+
+        .console-action-btn:hover {
+            background: var(--lcars-red);
+            color: var(--lcars-white);
+            box-shadow: 0 0 15px var(--lcars-red);
+        }
+
+        .console-empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            opacity: 0.35;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .console-empty-icon {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+        }
+
+        .console-empty-text {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.9rem;
+            color: var(--lcars-light-blue);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            line-height: 1.6;
+        }
+
+        /* Responsive: collapse to single column on narrow screens */
+        @media (max-width: 1100px) {
+            .split-pane-wrapper {
+                flex-direction: column;
+            }
+            .right-pane {
+                flex: none;
+                width: 100%;
+                position: static;
+                height: 480px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1425,6 +1605,8 @@
             </div>
         </div>
 
+        <div class="split-pane-wrapper">
+        <div class="left-pane">
         <div class="lcars-grid">
             <!-- GIT OPERATIONS PANEL -->
             <div class="lcars-panel">
@@ -2201,32 +2383,6 @@
                 </div>
             </div>
 
-            <!-- TERMINAL PANEL -->
-            <div class="lcars-panel lcars-terminal-container">
-                <div class="lcars-panel-header">
-                    <svg class="lcars-icon" viewBox="0 0 24 24">
-                        <path d="M2,3H22V21H2V3M4,5V19H20V5H4M6,7H18V9H6V7M6,11H14V13H6V11M6,15H16V17H6V15Z"/>
-                    </svg>
-                    <h2>Command Console</h2>
-                </div>
-                <div class="lcars-terminal">
-                    <div class="terminal-header">
-                        <div class="enterprise-logo">
-                            <div class="status-indicator operational"></div>
-                            <div class="status-indicator standby"></div>
-                            <div class="status-indicator operational"></div>
-                        </div>
-                        <div class="terminal-title">Main Console</div>
-                    </div>
-                    <div class="terminal-content" id="terminal-content">
-                        <div class="terminal-line">
-                            <span class="terminal-prompt">STARDATE 2024.08.13 </span>
-                            <span class="terminal-command">Enhanced MCP Server - Command Interface Ready</span>
-                        </div>
-                        <div class="terminal-line terminal-output">Initialize any system by activating the appropriate control above...</div>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <div class="lcars-control-panel">
@@ -2269,6 +2425,36 @@
                 </button>
             </div>
         </div>
+
+        </div><!-- end left-pane -->
+
+        <!-- RIGHT PANE: Sticky Output Console -->
+        <div class="right-pane">
+            <div class="right-console-panel">
+                <div class="right-console-header">
+                    <div class="right-console-dots">
+                        <div class="status-indicator operational"></div>
+                        <div class="status-indicator standby"></div>
+                        <div class="status-indicator operational"></div>
+                    </div>
+                    <h3>Output Console</h3>
+                </div>
+                <div class="right-console-output" id="terminal-content">
+                    <div class="console-empty-state" id="console-empty-state">
+                        <div class="console-empty-icon">⚡</div>
+                        <div class="console-empty-text">Activate any tool on the left<br>to see results here</div>
+                    </div>
+                </div>
+                <div class="right-console-actions">
+                    <button class="console-action-btn" onclick="clearTerminal()">✕ Clear</button>
+                    <button class="console-action-btn" onclick="refreshDashboard()">⟳ Refresh</button>
+                    <button class="console-action-btn" onclick="runHealthCheck()">⚡ Diagnose</button>
+                    <button class="console-action-btn" onclick="listAvailableTools()">📋 Tools</button>
+                </div>
+            </div>
+        </div><!-- end right-pane -->
+
+        </div><!-- end split-pane-wrapper -->
 
         <div class="starfleet-footer">
             <div class="federation-emblem">★</div>
@@ -2354,6 +2540,10 @@
         function addTerminalLine(command, output, isError = false) {
             const terminal = document.getElementById('terminal-content');
             if (!terminal) return;
+
+            // Hide empty state placeholder on first output
+            const emptyState = document.getElementById('console-empty-state');
+            if (emptyState) emptyState.style.display = 'none';
             
             const stardate = generateStardate();
             
@@ -2383,7 +2573,7 @@
             terminal.scrollTop = terminal.scrollHeight;
             
             // Limit terminal history
-            while (terminal.children.length > 100) {
+            while (terminal.children.length > 102) {
                 terminal.removeChild(terminal.firstChild);
             }
         }
@@ -2394,9 +2584,9 @@
             
             playBeep();
             terminal.innerHTML = `
-                <div class="terminal-line">
-                    <span class="terminal-prompt">STARDATE ${generateStardate()} </span>
-                    <span class="terminal-command">CONSOLE RESET - All previous logs purged</span>
+                <div class="console-empty-state" id="console-empty-state">
+                    <div class="console-empty-icon">⚡</div>
+                    <div class="console-empty-text">Console cleared — activate any tool<br>to see results here</div>
                 </div>
             `;
         }
