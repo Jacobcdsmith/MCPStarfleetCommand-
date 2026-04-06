@@ -215,6 +215,11 @@
             margin-bottom: 20px;
         }
 
+        /* Any trailing odd panel (last child that would be alone in a row) fills full width */
+        .lcars-grid > .lcars-panel:last-child:nth-child(odd) {
+            grid-column: 1 / -1;
+        }
+
         .lcars-panel {
             background: linear-gradient(135deg, var(--lcars-gray) 0%, rgba(0,0,50,0.9) 100%);
             border: 3px solid var(--lcars-orange);
@@ -435,9 +440,6 @@
             letter-spacing: 1px;
         }
 
-        .lcars-terminal-container {
-            /* terminal moved to right pane */
-        }
 
         .lcars-terminal {
             background: linear-gradient(135deg, var(--lcars-black) 0%, #001122 100%);
