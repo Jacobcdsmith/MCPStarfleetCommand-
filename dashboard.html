@@ -1738,6 +1738,89 @@
                 height: 480px;
             }
         }
+
+        /* ─── Navigation Bar ─────────────────────────────────── */
+        .nav-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            background: linear-gradient(135deg, rgba(0,0,60,0.95) 0%, rgba(0,0,30,0.98) 100%);
+            border: 2px solid var(--lcars-orange);
+            border-radius: 15px;
+            padding: 12px 18px;
+            margin-bottom: 20px;
+        }
+
+        .nav-label {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--lcars-orange);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-right: 6px;
+            white-space: nowrap;
+        }
+
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(45deg, var(--lcars-blue), var(--lcars-dark-blue));
+            border: 2px solid rgba(85,85,255,0.5);
+            border-radius: 20px 0 20px 0;
+            padding: 7px 16px;
+            color: var(--lcars-white);
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .nav-link:hover {
+            background: linear-gradient(45deg, var(--lcars-light-blue), var(--lcars-blue));
+            border-color: var(--enterprise-gold);
+            box-shadow: 0 0 15px rgba(255,215,0,0.4);
+            transform: translateY(-2px);
+            color: var(--lcars-black);
+        }
+
+        .nav-link.hub {
+            background: var(--lcars-orange);
+            border-color: var(--enterprise-gold);
+            color: var(--lcars-black);
+            font-weight: 900;
+        }
+
+        .nav-link.hub:hover {
+            background: var(--enterprise-gold);
+            box-shadow: 0 0 20px var(--enterprise-gold);
+        }
+
+        .nav-link.redteam {
+            background: linear-gradient(45deg, #330000, #1a0000);
+            border-color: #ff3300;
+            color: #ff6644;
+        }
+
+        .nav-link.redteam:hover {
+            background: #ff3300;
+            color: var(--lcars-white);
+            box-shadow: 0 0 15px rgba(255,51,0,0.5);
+        }
+
+        .nav-divider {
+            width: 2px;
+            height: 24px;
+            background: rgba(85,85,255,0.3);
+            border-radius: 1px;
+            margin: 0 4px;
+        }
     </style>
 </head>
 <body>
@@ -1756,6 +1839,23 @@
                 <span id="stardate" class="stardate"></span>
             </div>
         </div>
+
+        <!-- Navigation Bar -->
+        <nav class="nav-bar">
+            <span class="nav-label">⬡ Modules</span>
+            <a href="/pages/index.html" class="nav-link hub">🗺 Module Hub</a>
+            <div class="nav-divider"></div>
+            <a href="/pages/git.html"      class="nav-link">🔀 Git</a>
+            <a href="/pages/files.html"    class="nav-link">📁 Files</a>
+            <a href="/pages/system.html"   class="nav-link">💻 System</a>
+            <a href="/pages/network.html"  class="nav-link">🌐 Network</a>
+            <a href="/pages/data.html"     class="nav-link">🔬 Data</a>
+            <a href="/pages/docker.html"   class="nav-link">🐳 Docker</a>
+            <a href="/pages/analytics.html" class="nav-link">📊 Analytics</a>
+            <a href="/pages/services.html" class="nav-link">⚙️ Services</a>
+            <div class="nav-divider"></div>
+            <a href="/pages/redteam.html"  class="nav-link redteam">⚔️ Red Team</a>
+        </nav>
 
         <div class="split-pane-wrapper">
         <div class="left-pane">
@@ -2373,6 +2473,10 @@
                         <div class="lcars-button sec-btn" onclick="executeCommand('network_connections', {})">
                             <div class="tool-name">🌐 Network Connections</div>
                             <div class="tool-description">All TCP connections by state</div>
+                        </div>
+                        <div class="lcars-button sec-btn" onclick="window.location.href='/pages/redteam.html'" style="border-color:#ff3300;background:linear-gradient(45deg,#330000,#1a0000);">
+                            <div class="tool-name" style="color:#ff6644;">⚔️ Red Team Testing</div>
+                            <div class="tool-description" style="color:#ff9966;">Injection, recon &amp; auth attack simulation</div>
                         </div>
                         <div class="lcars-button sec-btn" onclick="executeCommand('run_command', {command: 'find . -maxdepth 4 -perm /o+w -type f 2>/dev/null | grep -v node_modules | head -20 || echo \"None found\"'})">
                             <div class="tool-name">📂 World-Writable Files</div>
