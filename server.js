@@ -76,6 +76,14 @@ const asyncExec = (command, options = {}) => {
   });
 };
 
+const formatBytes = (bytes) => {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
 // Tool execution function (shared between MCP and HTTP)
 const executeTool = async (name, args = {}) => {
   try {
@@ -289,6 +297,175 @@ const executeTool = async (name, args = {}) => {
             `Search error: ${result.error}`
         };
 
+      // HTTP Client
+      case "fetch_url": {
+        const { url: fUrl, method: fMethod = "GET", body: fBody = "", headers: fHeaders = {} } = args || {};
+        if (!fUrl) return { success: false, error: "url is required" };
+        try {
+          const opts = { method: fMethod, headers: fHeaders, signal: AbortSignal.timeout(15000) };
+          if (fBody && fMethod !== "GET" && fMethod !== "HEAD") opts.body = fBody;
+          const resp = await fetch(fUrl, opts);
+          const text = await resp.text();
+          const headersObj = {};
+          resp.headers.forEach((v, k) => { headersObj[k] = v; });
+          return {
+            success: true,
+            output: `${fMethod} ${fUrl}\nHTTP ${resp.status} ${resp.statusText}\n${'─'.repeat(50)}\n` +
+              `Headers: ${JSON.stringify(headersObj, null, 2)}\n${'─'.repeat(50)}\n` +
+              `Body:\n${text.substring(0, 4000)}${text.length > 4000 ? '\n[truncated]' : ''}`
+          };
+        } catch (e) {
+          return { success: false, error: `Request failed: ${e.message}` };
+        }
+      }
+
+      // Environment variables
+      case "env_list": {
+        const { filter: envFilter = "" } = args || {};
+        const entries = Object.entries(process.env)
+          .sort(([a], [b]) => a.localeCompare(b))
+          .filter(([k]) => !envFilter || k.toLowerCase().includes(envFilter.toLowerCase()))
+          .map(([k, v]) => `${k}=${v.length > 100 ? v.substring(0, 100) + '...' : v}`);
+        return { success: true, output: `${entries.length} environment variables${envFilter ? ` matching "${envFilter}"` : ''}:\n\n${entries.join('\n')}` };
+      }
+
+      // File operations (proper Node.js implementations)
+      case "file_stats": {
+        const { filepath: sfp } = args || {};
+        if (!sfp) return { success: false, error: "filepath is required" };
+        try {
+          const stat = await fs.stat(path.resolve(sfp));
+          return {
+            success: true,
+            output: JSON.stringify({
+              path: sfp,
+              size: stat.size,
+              sizeFormatted: formatBytes(stat.size),
+              created: stat.birthtime.toISOString(),
+              modified: stat.mtime.toISOString(),
+              accessed: stat.atime.toISOString(),
+              isFile: stat.isFile(),
+              isDirectory: stat.isDirectory(),
+              permissions: '0' + (stat.mode & 0o777).toString(8)
+            }, null, 2)
+          };
+        } catch (e) {
+          return { success: false, error: e.message };
+        }
+      }
+
+      case "delete_file": {
+        const { filepath: dfp, recursive: dfr = false } = args || {};
+        if (!dfp) return { success: false, error: "filepath is required" };
+        try {
+          await fs.rm(path.resolve(dfp), { recursive: dfr });
+          return { success: true, output: `Deleted: ${dfp}` };
+        } catch (e) {
+          return { success: false, error: e.message };
+        }
+      }
+
+      case "move_file": {
+        const { source: mfsrc, destination: mfdst } = args || {};
+        if (!mfsrc || !mfdst) return { success: false, error: "source and destination required" };
+        try {
+          await fs.rename(path.resolve(mfsrc), path.resolve(mfdst));
+          return { success: true, output: `Moved: ${mfsrc} → ${mfdst}` };
+        } catch (e) {
+          return { success: false, error: e.message };
+        }
+      }
+
+      case "copy_file": {
+        const { source: cfsrc, destination: cfdst } = args || {};
+        if (!cfsrc || !cfdst) return { success: false, error: "source and destination required" };
+        try {
+          await fs.copyFile(path.resolve(cfsrc), path.resolve(cfdst));
+          return { success: true, output: `Copied: ${cfsrc} → ${cfdst}` };
+        } catch (e) {
+          return { success: false, error: e.message };
+        }
+      }
+
+      case "find_files": {
+        const { pattern: ffpat, directory: ffdir = ".", maxdepth: ffmax = 5 } = args || {};
+        if (!ffpat) return { success: false, error: "pattern is required" };
+        const ff = safeExec(`find "${ffdir}" -maxdepth ${ffmax} -name "${ffpat}" 2>/dev/null | head -100`);
+        return { success: true, output: ff.output || "No files found matching pattern" };
+      }
+
+      // System info tools
+      case "node_info": {
+        const nvout = safeExec("npm -v 2>/dev/null");
+        return {
+          success: true,
+          output: JSON.stringify({
+            nodeVersion: process.version,
+            npmVersion: nvout.success ? nvout.output.trim() : "unknown",
+            platform: process.platform,
+            arch: process.arch,
+            pid: process.pid,
+            uptime: Math.round(process.uptime()) + "s",
+            memoryUsage: {
+              rss: formatBytes(process.memoryUsage().rss),
+              heapUsed: formatBytes(process.memoryUsage().heapUsed),
+              heapTotal: formatBytes(process.memoryUsage().heapTotal),
+              external: formatBytes(process.memoryUsage().external)
+            },
+            nodeVersions: process.versions
+          }, null, 2)
+        };
+      }
+
+      case "disk_usage": {
+        const df = safeExec("df -h 2>/dev/null");
+        return { success: true, output: df.output || df.error || "Disk info unavailable" };
+      }
+
+      case "cpu_load": {
+        const loadavg = os.loadavg();
+        const cpuCount = os.cpus().length;
+        const cpuModel = os.cpus()[0]?.model?.trim() || "Unknown";
+        return {
+          success: true,
+          output: `CPU Model: ${cpuModel}\nCores: ${cpuCount}\nLoad Average: ${loadavg[0].toFixed(2)} (1m)  ${loadavg[1].toFixed(2)} (5m)  ${loadavg[2].toFixed(2)} (15m)\nEstimated Usage: ${Math.min(100, (loadavg[0] / cpuCount * 100)).toFixed(1)}%`
+        };
+      }
+
+      case "npm_list": {
+        const nl = safeExec("npm list --depth=0 2>/dev/null");
+        return { success: true, output: nl.output || nl.error || "npm list unavailable" };
+      }
+
+      case "npm_audit": {
+        const na = safeExec("npm audit 2>/dev/null");
+        return { success: true, output: na.output || na.error || "npm audit unavailable" };
+      }
+
+      case "memory_detail": {
+        const memTotal = os.totalmem();
+        const memFree = os.freemem();
+        const memUsed = memTotal - memFree;
+        const procMem = process.memoryUsage();
+        return {
+          success: true,
+          output: JSON.stringify({
+            system: {
+              total: formatBytes(memTotal),
+              used: formatBytes(memUsed),
+              free: formatBytes(memFree),
+              usagePercent: (memUsed / memTotal * 100).toFixed(1) + '%'
+            },
+            process: {
+              rss: formatBytes(procMem.rss),
+              heapTotal: formatBytes(procMem.heapTotal),
+              heapUsed: formatBytes(procMem.heapUsed),
+              external: formatBytes(procMem.external)
+            }
+          }, null, 2)
+        };
+      }
+
       default:
         return { success: false, error: `Unknown tool: ${name}` };
     }
@@ -334,9 +511,52 @@ app.get('/api/status', (req, res) => {
   res.json({
     status: 'online',
     server: 'enhanced-mcp-server',
-    version: '1.0.0',
+    version: '2.0.0',
     uptime: process.uptime(),
     timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/api/metrics', (req, res) => {
+  const cpus = os.cpus();
+  const loadavg = os.loadavg();
+  const memTotal = os.totalmem();
+  const memFree = os.freemem();
+  const memUsed = memTotal - memFree;
+  const procMem = process.memoryUsage();
+  res.json({
+    cpu: {
+      count: cpus.length,
+      model: cpus[0]?.model?.trim() || 'Unknown',
+      loadavg: { '1m': loadavg[0], '5m': loadavg[1], '15m': loadavg[2] },
+      usagePercent: Math.min(100, parseFloat((loadavg[0] / cpus.length * 100).toFixed(1)))
+    },
+    memory: {
+      total: memTotal,
+      free: memFree,
+      used: memUsed,
+      totalFormatted: formatBytes(memTotal),
+      usedFormatted: formatBytes(memUsed),
+      freeFormatted: formatBytes(memFree),
+      usagePercent: parseFloat((memUsed / memTotal * 100).toFixed(1))
+    },
+    process: {
+      pid: process.pid,
+      uptime: Math.round(process.uptime()),
+      version: process.version,
+      memory: {
+        rss: formatBytes(procMem.rss),
+        heapUsed: formatBytes(procMem.heapUsed),
+        heapTotal: formatBytes(procMem.heapTotal)
+      }
+    },
+    system: {
+      uptime: Math.round(os.uptime()),
+      hostname: os.hostname(),
+      platform: os.platform(),
+      arch: os.arch()
+    },
+    timestamp: Date.now()
   });
 });
 
@@ -359,24 +579,47 @@ app.post('/api/tools/execute', async (req, res) => {
 app.get('/api/tools', async (req, res) => {
   res.json({
     tools: [
-      { name: "git_status", description: "Get git repository status" },
-      { name: "git_log", description: "Get git commit history" },
-      { name: "git_diff", description: "Show git differences" },
-      { name: "git_branch", description: "List git branches" },
-      { name: "list_files", description: "List files and directories" },
-      { name: "read_file", description: "Read file contents" },
-      { name: "write_file", description: "Write content to file" },
-      { name: "create_directory", description: "Create a directory" },
-      { name: "run_command", description: "Execute system command" },
-      { name: "system_info", description: "Get system information" },
-      { name: "parse_json", description: "Parse and validate JSON string" },
-      { name: "format_json", description: "Format JSON with proper indentation" },
-      { name: "search_files", description: "Search for text within files" }
+      // Git
+      { name: "git_status", description: "Get git repository status", category: "git" },
+      { name: "git_log", description: "Get git commit history", category: "git" },
+      { name: "git_diff", description: "Show git differences", category: "git" },
+      { name: "git_branch", description: "List git branches", category: "git" },
+      // File System
+      { name: "list_files", description: "List files and directories", category: "filesystem" },
+      { name: "read_file", description: "Read file contents", category: "filesystem" },
+      { name: "write_file", description: "Write content to file", category: "filesystem" },
+      { name: "create_directory", description: "Create a directory", category: "filesystem" },
+      { name: "file_stats", description: "Get file metadata and stats", category: "filesystem" },
+      { name: "delete_file", description: "Delete a file or directory", category: "filesystem" },
+      { name: "move_file", description: "Move or rename a file", category: "filesystem" },
+      { name: "copy_file", description: "Copy a file to new location", category: "filesystem" },
+      { name: "find_files", description: "Find files by name pattern", category: "filesystem" },
+      // System
+      { name: "run_command", description: "Execute system command", category: "system" },
+      { name: "system_info", description: "Get system information", category: "system" },
+      { name: "cpu_load", description: "Get CPU load average", category: "system" },
+      { name: "disk_usage", description: "Get disk space usage", category: "system" },
+      { name: "memory_detail", description: "Detailed memory breakdown", category: "system" },
+      { name: "node_info", description: "Node.js runtime information", category: "system" },
+      { name: "npm_list", description: "List installed npm packages", category: "system" },
+      { name: "npm_audit", description: "Run npm security audit", category: "system" },
+      // Network
+      { name: "fetch_url", description: "Make HTTP requests to any URL", category: "network" },
+      // Data
+      { name: "parse_json", description: "Parse and validate JSON string", category: "data" },
+      { name: "format_json", description: "Format JSON with proper indentation", category: "data" },
+      { name: "search_files", description: "Search for text within files", category: "data" },
+      // Environment
+      { name: "env_list", description: "List environment variables", category: "environment" }
     ]
   });
 });
 
+// Suppress browser favicon 404
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+
 // Start HTTP server
+
 app.listen(PORT, '0.0.0.0', () => {
   logger.info(`Dashboard server running on http://0.0.0.0:${PORT}`);
 });

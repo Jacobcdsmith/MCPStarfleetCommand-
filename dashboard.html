@@ -1694,9 +1694,13 @@
                             <div class="tool-name">🗑️ Delete File</div>
                             <div class="tool-description">Remove file (with confirmation)</div>
                         </div>
-                        <div class="lcars-button" onclick="viewFileInfo()">
-                            <div class="tool-name">ℹ️ File Info</div>
-                            <div class="tool-description">Get file size, dates, permissions</div>
+                        <div class="lcars-button" onclick="promptFileStats()">
+                            <div class="tool-name">ℹ️ File Stats</div>
+                            <div class="tool-description">Size, dates, permissions, type</div>
+                        </div>
+                        <div class="lcars-button" onclick="promptFindFiles()">
+                            <div class="tool-name">🔎 Find Files</div>
+                            <div class="tool-description">Search by name pattern</div>
                         </div>
                         <div class="lcars-button" onclick="treeView()">
                             <div class="tool-name">🌳 Tree View</div>
@@ -1802,132 +1806,115 @@
                 </div>
             </div>
 
-            <!-- DOCKER CONTAINERS PANEL -->
+            <!-- RUNTIME ENVIRONMENT PANEL -->
             <div class="lcars-panel">
                 <div class="lcars-panel-header">
                     <svg class="lcars-icon" viewBox="0 0 24 24">
-                        <path d="M21.81 10.25c-.06-.04-.56-.43-1.64-.43-.28 0-.56.03-.84.08-.21-1.4-1.38-2.11-1.43-2.14l-.29-.17-.18.27c-.24.36-.43.77-.51 1.19-.2.8-.08 1.56.33 2.21-.49.28-1.29.35-1.45.35H2.62c-.34 0-.62.28-.62.63 0 1.04.16 2.08.49 3.07.38 1.14.97 1.98 1.75 2.49.9.57 2.37.9 4.05.9.76 0 1.56-.07 2.37-.24.98-.2 1.92-.54 2.79-1.01.72-.39 1.37-.88 1.93-1.46.9-.93 1.54-2.03 1.98-3.04h.17c1.06 0 1.74-.43 2.11-.79.28-.27.49-.6.59-.95l.08-.3-.19-.16zM3.86 9.45h1.93c.09 0 .17-.08.17-.17V7.57c0-.09-.08-.17-.17-.17H3.86c-.09 0-.17.08-.17.17v1.71c0 .09.08.17.17.17zm2.64 0H8.4c.09 0 .17-.08.17-.17V7.57c0-.09-.08-.17-.17-.17H6.5c-.09 0-.17.08-.17.17v1.71c0 .09.08.17.17.17zm2.69 0h1.9c.09 0 .17-.08.17-.17V7.57c0-.09-.08-.17-.17-.17h-1.9c-.09 0-.17.08-.17.17v1.71c0 .09.08.17.17.17zm2.64 0h1.93c.09 0 .17-.08.17-.17V7.57c0-.09-.08-.17-.17-.17h-1.93c-.09 0-.17.08-.17.17v1.71c0 .09.08.17.17.17zm-5.33-2.5H8.4c.09 0 .17-.08.17-.17V5.07c0-.09-.08-.17-.17-.17H6.5c-.09 0-.17.08-.17.17v1.71c0 .09.08.17.17.17zm2.69 0h1.9c.09 0 .17-.08.17-.17V5.07c0-.09-.08-.17-.17-.17h-1.9c-.09 0-.17.08-.17.17v1.71c0 .09.08.17.17.17zm2.64 0h1.93c.09 0 .17-.08.17-.17V5.07c0-.09-.08-.17-.17-.17h-1.93c-.09 0-.17.08-.17.17v1.71c0 .09.08.17.17.17zm0-2.5h1.93c.09 0 .17-.08.17-.17V2.57c0-.09-.08-.17-.17-.17h-1.93c-.09 0-.17.08-.17.17v1.71c0 .09.08.17.17.17z"/>
+                        <path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/>
                     </svg>
-                    <h2>Docker Fleet</h2>
+                    <h2>Runtime Environment</h2>
                 </div>
                 <div class="panel-content">
                     <div class="lcars-tool-list">
-                        <div class="lcars-button" onclick="loadDockerContainers()">
-                            <div class="tool-name">🐳 List Containers</div>
-                            <div class="tool-description">Show all container status</div>
+                        <div class="lcars-button" onclick="executeCommand('node_info')">
+                            <div class="tool-name">⚡ Node.js Info</div>
+                            <div class="tool-description">Version, memory, process details</div>
                         </div>
-                        <div class="lcars-button" onclick="dockerComposeUp()">
-                            <div class="tool-name">🚀 Compose Up</div>
-                            <div class="tool-description">Start MCP stack services</div>
+                        <div class="lcars-button" onclick="executeCommand('npm_list')">
+                            <div class="tool-name">📦 List Packages</div>
+                            <div class="tool-description">Installed npm dependencies</div>
                         </div>
-                        <div class="lcars-button" onclick="dockerComposeDown()">
-                            <div class="tool-name">🛑 Compose Down</div>
-                            <div class="tool-description">Stop all stack services</div>
+                        <div class="lcars-button" onclick="executeCommand('npm_audit')">
+                            <div class="tool-name">🔒 Security Audit</div>
+                            <div class="tool-description">Check for vulnerabilities</div>
                         </div>
-                        <div class="lcars-button" onclick="dockerComposeLogs()">
-                            <div class="tool-name">📜 View Logs</div>
-                            <div class="tool-description">Container log output</div>
+                        <div class="lcars-button" onclick="npmOutdated()">
+                            <div class="tool-name">🔄 Check Updates</div>
+                            <div class="tool-description">Find outdated packages</div>
                         </div>
-                        <div class="lcars-button" onclick="dockerStats()">
-                            <div class="tool-name">📊 Resource Stats</div>
-                            <div class="tool-description">CPU/Memory usage per container</div>
+                        <div class="lcars-button" onclick="executeCommand('cpu_load')">
+                            <div class="tool-name">🖥️ CPU Load</div>
+                            <div class="tool-description">System load averages</div>
                         </div>
-                        <div class="lcars-button" onclick="dockerRestartContainer()">
-                            <div class="tool-name">🔄 Restart Container</div>
-                            <div class="tool-description">Restart specific container</div>
+                        <div class="lcars-button" onclick="executeCommand('disk_usage')">
+                            <div class="tool-name">💾 Disk Usage</div>
+                            <div class="tool-description">Filesystem space report</div>
                         </div>
-                        <div class="lcars-button" onclick="dockerStopContainer()">
-                            <div class="tool-name">⏹️ Stop Container</div>
-                            <div class="tool-description">Stop specific container</div>
+                        <div class="lcars-button" onclick="executeCommand('memory_detail')">
+                            <div class="tool-name">🧠 Memory Detail</div>
+                            <div class="tool-description">System and process memory</div>
                         </div>
-                        <div class="lcars-button" onclick="dockerStartContainer()">
-                            <div class="tool-name">▶️ Start Container</div>
-                            <div class="tool-description">Start stopped container</div>
+                        <div class="lcars-button" onclick="listProcesses()">
+                            <div class="tool-name">🔬 Process List</div>
+                            <div class="tool-description">Running system processes</div>
                         </div>
-                        <div class="lcars-button" onclick="dockerExec()">
-                            <div class="tool-name">💻 Exec in Container</div>
-                            <div class="tool-description">Run command inside container</div>
+                        <div class="lcars-button" onclick="executeCommand('run_command', {command: 'cat package.json'})">
+                            <div class="tool-name">📄 package.json</div>
+                            <div class="tool-description">View project manifest</div>
                         </div>
-                        <div class="lcars-button" onclick="dockerImages()">
-                            <div class="tool-name">🖼️ List Images</div>
-                            <div class="tool-description">Show Docker images</div>
+                        <div class="lcars-button" onclick="npmRunScript()">
+                            <div class="tool-name">▶️ Run Script</div>
+                            <div class="tool-description">Execute npm script</div>
                         </div>
-                        <div class="lcars-button" onclick="dockerNetworks()">
-                            <div class="tool-name">🌐 List Networks</div>
-                            <div class="tool-description">Show Docker networks</div>
+                        <div class="lcars-button" onclick="npmInstall()">
+                            <div class="tool-name">⬇️ Install Package</div>
+                            <div class="tool-description">npm install a package</div>
                         </div>
-                        <div class="lcars-button" onclick="dockerVolumes()">
-                            <div class="tool-name">💾 List Volumes</div>
-                            <div class="tool-description">Show Docker volumes</div>
-                        </div>
-                        <div class="lcars-button" onclick="dockerPrune()">
-                            <div class="tool-name">🧹 System Prune</div>
-                            <div class="tool-description">Clean unused resources</div>
-                        </div>
-                        <div class="lcars-button" onclick="dockerInspect()">
-                            <div class="tool-name">🔍 Inspect Container</div>
-                            <div class="tool-description">Detailed container config</div>
+                        <div class="lcars-button" onclick="nodeEval()">
+                            <div class="tool-name">⌨️ Eval JavaScript</div>
+                            <div class="tool-description">Run JS expression in Node</div>
                         </div>
                     </div>
-                    <div id="docker-status" style="margin-top: 15px;"></div>
                 </div>
             </div>
 
-            <!-- MCP SERVICES PANEL -->
+            <!-- API ENDPOINTS PANEL -->
             <div class="lcars-panel">
                 <div class="lcars-panel-header">
                     <svg class="lcars-icon" viewBox="0 0 24 24">
                         <path d="M4,1C2.89,1 2,1.89 2,3V7C2,8.11 2.89,9 4,9H1V11H13V9H10C11.11,9 12,8.11 12,7V3C12,1.89 11.11,1 10,1H4M4,3H10V7H4V3M14,13C12.89,13 12,13.89 12,15V19C12,20.11 12.89,21 14,21H11V23H23V21H20C21.11,21 22,20.11 22,19V15C22,13.89 21.11,13 20,13H14M3,13V18L3,20H5V18H8V20H10V18C10,16.89 9.11,16 8,16H5C3.89,16 3,16.89 3,18V13H1V11H3V13M14,15H20V19H14V15Z"/>
                     </svg>
-                    <h2>MCP Services</h2>
+                    <h2>API & Endpoints</h2>
                 </div>
                 <div class="panel-content">
-                    <div class="lcars-stats-grid" id="services-grid">
-                        <div class="lcars-stat-pod" onclick="openService('http://localhost:3001')" title="MCP Server Dashboard">
-                            <div class="stat-value" style="font-size: 1.2rem;">🖥️</div>
-                            <div class="stat-label">MCP Server<br><small>:3001</small></div>
+                    <div class="lcars-stats-grid">
+                        <div class="lcars-stat-pod" onclick="fetchEndpoint('/api/status')" title="Server status">
+                            <div class="stat-value" style="font-size: 1.2rem;">🟢</div>
+                            <div class="stat-label">Status<br><small>/api/status</small></div>
                         </div>
-                        <div class="lcars-stat-pod" onclick="openService('http://localhost:3000')" title="Grafana Dashboards">
+                        <div class="lcars-stat-pod" onclick="fetchEndpoint('/api/metrics')" title="Live metrics">
                             <div class="stat-value" style="font-size: 1.2rem;">📊</div>
-                            <div class="stat-label">Grafana<br><small>:3000</small></div>
+                            <div class="stat-label">Metrics<br><small>/api/metrics</small></div>
                         </div>
-                        <div class="lcars-stat-pod" onclick="openService('http://localhost:9090')" title="Prometheus Metrics">
-                            <div class="stat-value" style="font-size: 1.2rem;">📈</div>
-                            <div class="stat-label">Prometheus<br><small>:9090</small></div>
+                        <div class="lcars-stat-pod" onclick="fetchEndpoint('/api/tools')" title="Tool manifest">
+                            <div class="stat-value" style="font-size: 1.2rem;">🛠️</div>
+                            <div class="stat-label">Tools<br><small>/api/tools</small></div>
                         </div>
-                        <div class="lcars-stat-pod" onclick="openService('http://localhost:3002')" title="Analytics Dashboard">
-                            <div class="stat-value" style="font-size: 1.2rem;">📉</div>
-                            <div class="stat-label">Analytics<br><small>:3002</small></div>
+                        <div class="lcars-stat-pod" onclick="fetchEndpoint('/health')" title="Health check">
+                            <div class="stat-value" style="font-size: 1.2rem;">💓</div>
+                            <div class="stat-label">Health<br><small>/health</small></div>
                         </div>
-                        <div class="lcars-stat-pod" onclick="openService('http://localhost:8080')" title="Container Advisor">
-                            <div class="stat-value" style="font-size: 1.2rem;">📦</div>
-                            <div class="stat-label">cAdvisor<br><small>:8080</small></div>
+                        <div class="lcars-stat-pod" onclick="fetchEndpoint('/pages-test')" title="Pages test">
+                            <div class="stat-value" style="font-size: 1.2rem;">📁</div>
+                            <div class="stat-label">Pages<br><small>/pages-test</small></div>
                         </div>
-                        <div class="lcars-stat-pod" onclick="checkRedis()" title="Redis Cache">
-                            <div class="stat-value" style="font-size: 1.2rem;">🔴</div>
-                            <div class="stat-label">Redis<br><small>:6379</small></div>
-                        </div>
-                        <div class="lcars-stat-pod" onclick="openService('http://localhost:80')" title="Nginx Proxy">
-                            <div class="stat-value" style="font-size: 1.2rem;">🌐</div>
-                            <div class="stat-label">Nginx<br><small>:80</small></div>
-                        </div>
-                        <div class="lcars-stat-pod" onclick="checkNodeExporter()" title="Node Exporter Metrics">
-                            <div class="stat-value" style="font-size: 1.2rem;">📡</div>
-                            <div class="stat-label">Node Exp<br><small>:9100</small></div>
+                        <div class="lcars-stat-pod" id="server-uptime-pod" title="Server uptime">
+                            <div class="stat-value" id="endpoint-uptime" style="font-size: 1rem;">--</div>
+                            <div class="stat-label">Uptime</div>
                         </div>
                     </div>
-                    <div style="margin-top: 20px;">
+                    <div style="margin-top: 16px;">
                         <div class="lcars-button" onclick="checkAllServices()">
                             <div class="tool-name">💓 Health Check All</div>
-                            <div class="tool-description">Verify all services are responding</div>
+                            <div class="tool-description">Verify all active endpoints</div>
                         </div>
-                        <div class="lcars-button" onclick="prometheusQuery()">
-                            <div class="tool-name">📊 Prometheus Query</div>
-                            <div class="tool-description">Execute PromQL query</div>
+                        <div class="lcars-button" onclick="promptFetchUrl()">
+                            <div class="tool-name">🌐 Custom HTTP Request</div>
+                            <div class="tool-description">Fetch any URL via server</div>
                         </div>
-                        <div class="lcars-button" onclick="grafanaApiTest()">
-                            <div class="tool-name">📈 Grafana API</div>
-                            <div class="tool-description">Test Grafana connection</div>
+                        <div class="lcars-button" onclick="showLiveMetrics()">
+                            <div class="tool-name">📈 Live System Metrics</div>
+                            <div class="tool-description">Real-time CPU and memory</div>
                         </div>
                     </div>
                 </div>
@@ -2074,6 +2061,114 @@
                         <div class="lcars-button" onclick="nodeEval()">
                             <div class="tool-name">⚡ Node Eval</div>
                             <div class="tool-description">Execute JS expression</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- HTTP CLIENT PANEL -->
+            <div class="lcars-panel">
+                <div class="lcars-panel-header">
+                    <svg class="lcars-icon" viewBox="0 0 24 24">
+                        <path d="M17 7H7C4.24 7 2 9.24 2 12s2.24 5 5 5h10c2.76 0 5-2.24 5-5s-2.24-5-5-5zM7 15c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/>
+                    </svg>
+                    <h2>HTTP Client</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="lcars-tool-list">
+                        <div class="lcars-button" onclick="promptFetchUrl('GET')">
+                            <div class="tool-name">🔵 GET Request</div>
+                            <div class="tool-description">Fetch data from any URL</div>
+                        </div>
+                        <div class="lcars-button" onclick="promptFetchUrl('POST')">
+                            <div class="tool-name">🟢 POST Request</div>
+                            <div class="tool-description">Send data to an endpoint</div>
+                        </div>
+                        <div class="lcars-button" onclick="promptFetchUrl('PUT')">
+                            <div class="tool-name">🟡 PUT Request</div>
+                            <div class="tool-description">Update resource at URL</div>
+                        </div>
+                        <div class="lcars-button" onclick="promptFetchUrl('DELETE')">
+                            <div class="tool-name">🔴 DELETE Request</div>
+                            <div class="tool-description">Delete resource at URL</div>
+                        </div>
+                        <div class="lcars-button" onclick="promptFetchUrl('PATCH')">
+                            <div class="tool-name">🟠 PATCH Request</div>
+                            <div class="tool-description">Partially update resource</div>
+                        </div>
+                        <div class="lcars-button" onclick="fetchEndpoint('/api/status')">
+                            <div class="tool-name">🏓 Ping Server</div>
+                            <div class="tool-description">Test MCP server response</div>
+                        </div>
+                        <div class="lcars-button" onclick="fetchEndpoint('/api/metrics')">
+                            <div class="tool-name">📊 Get Metrics</div>
+                            <div class="tool-description">Fetch live system metrics</div>
+                        </div>
+                        <div class="lcars-button" onclick="curlRequest()">
+                            <div class="tool-name">🔧 cURL Command</div>
+                            <div class="tool-description">Custom curl via terminal</div>
+                        </div>
+                        <div class="lcars-button" onclick="wgetDownload()">
+                            <div class="tool-name">⬇️ Download File</div>
+                            <div class="tool-description">Fetch and save URL content</div>
+                        </div>
+                        <div class="lcars-button" onclick="dnsLookup()">
+                            <div class="tool-name">🔍 DNS Lookup</div>
+                            <div class="tool-description">Resolve hostname to IP</div>
+                        </div>
+                        <div class="lcars-button" onclick="pingHost()">
+                            <div class="tool-name">📡 Ping Host</div>
+                            <div class="tool-description">ICMP ping to any host</div>
+                        </div>
+                        <div class="lcars-button" onclick="executeCommand('run_command', {command: 'curl -s ifconfig.me || curl -s ipinfo.io/ip'})">
+                            <div class="tool-name">🌍 My Public IP</div>
+                            <div class="tool-description">Detect external IP address</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ENVIRONMENT VARIABLES PANEL -->
+            <div class="lcars-panel">
+                <div class="lcars-panel-header">
+                    <svg class="lcars-icon" viewBox="0 0 24 24">
+                        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 4l5 2.18V11c0 3.5-2.33 6.79-5 7.93-2.67-1.14-5-4.43-5-7.93V7.18L12 5z"/>
+                    </svg>
+                    <h2>Environment</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="lcars-tool-list">
+                        <div class="lcars-button" onclick="executeCommand('env_list')">
+                            <div class="tool-name">📋 All Variables</div>
+                            <div class="tool-description">List all environment variables</div>
+                        </div>
+                        <div class="lcars-button" onclick="searchEnvVar()">
+                            <div class="tool-name">🔍 Search Variable</div>
+                            <div class="tool-description">Filter env vars by name</div>
+                        </div>
+                        <div class="lcars-button" onclick="executeCommand('env_list', {filter: 'node'})">
+                            <div class="tool-name">⚡ Node Vars</div>
+                            <div class="tool-description">NODE_* environment variables</div>
+                        </div>
+                        <div class="lcars-button" onclick="executeCommand('env_list', {filter: 'path'})">
+                            <div class="tool-name">🛤️ PATH Vars</div>
+                            <div class="tool-description">PATH and related variables</div>
+                        </div>
+                        <div class="lcars-button" onclick="executeCommand('env_list', {filter: 'replit'})">
+                            <div class="tool-name">🏗️ Replit Vars</div>
+                            <div class="tool-description">REPLIT_* environment variables</div>
+                        </div>
+                        <div class="lcars-button" onclick="executeCommand('run_command', {command: 'cat .env 2>/dev/null || echo \".env not found\"'})">
+                            <div class="tool-name">📄 Read .env File</div>
+                            <div class="tool-description">View .env configuration</div>
+                        </div>
+                        <div class="lcars-button" onclick="executeCommand('run_command', {command: 'echo \"PORT=$PORT\\nNODE_ENV=$NODE_ENV\\nHOME=$HOME\\nPWD=$PWD\"'})">
+                            <div class="tool-name">🔑 Key System Vars</div>
+                            <div class="tool-description">PORT, NODE_ENV, HOME, PWD</div>
+                        </div>
+                        <div class="lcars-button" onclick="executeCommand('run_command', {command: 'printenv | wc -l && echo \"total env vars\"'})">
+                            <div class="tool-name">🔢 Count Variables</div>
+                            <div class="tool-description">Total env variable count</div>
                         </div>
                     </div>
                 </div>
@@ -3070,7 +3165,7 @@
             const text = prompt('Text to hash:');
             if (text) {
                 playBeep();
-                executeCommand('run_command', { command: `echo -n "${text}" | md5sum && echo -n "${text}" | sha1sum && echo -n "${text}" | sha256sum` });
+                executeCommand('run_command', { command: `echo -n "${text}" | md5sum 2>/dev/null; echo -n "${text}" | sha1sum 2>/dev/null; echo -n "${text}" | sha256sum 2>/dev/null` });
             }
         }
 
@@ -3262,24 +3357,27 @@
 
         async function checkAllServices() {
             playBeep();
-            addTerminalLine('HEALTH-CHECK', 'Scanning all MCP services...');
+            addTerminalLine('HEALTH-CHECK', 'Scanning active MCP endpoints...');
             
-            const services = [
-                { name: 'MCP Server', port: 3001, path: '/api/status' },
-                { name: 'Grafana', port: 3000, path: '/api/health' },
-                { name: 'Prometheus', port: 9090, path: '/-/healthy' },
-                { name: 'Analytics', port: 3002, path: '/api/health' },
-                { name: 'cAdvisor', port: 8080, path: '/healthz' },
+            const endpoints = [
+                { name: 'MCP Dashboard', path: '/api/status' },
+                { name: 'Live Metrics', path: '/api/metrics' },
+                { name: 'Tools Manifest', path: '/api/tools' },
+                { name: 'Health Probe', path: '/health' },
             ];
             
-            for (const svc of services) {
+            for (const ep of endpoints) {
                 try {
-                    const response = await fetch(`http://localhost:${svc.port}${svc.path}`, { mode: 'no-cors', signal: AbortSignal.timeout(3000) });
-                    addTerminalLine(`  ✅ ${svc.name}`, `Port ${svc.port} responding`);
+                    const start = Date.now();
+                    const response = await fetch(ep.path, { signal: AbortSignal.timeout(5000) });
+                    const ms = Date.now() - start;
+                    const data = await response.json();
+                    addTerminalLine(`  ✅ ${ep.name}`, `${ep.path} → HTTP ${response.status} (${ms}ms)`);
                 } catch (e) {
-                    addTerminalLine(`  ❌ ${svc.name}`, `Port ${svc.port} not responding`, true);
+                    addTerminalLine(`  ❌ ${ep.name}`, `${ep.path} failed: ${e.message}`, true);
                 }
             }
+            addTerminalLine('HEALTH-CHECK', 'Scan complete');
         }
 
         async function prometheusQuery() {
@@ -3401,6 +3499,122 @@
         }
 
         // =====================================================
+        // HTTP Client Functions
+        // =====================================================
+        async function promptFetchUrl(defaultMethod = 'GET') {
+            const url = prompt(`URL to ${defaultMethod}:`, 'https://httpbin.org/get');
+            if (!url) return;
+            
+            let body = '';
+            if (defaultMethod === 'POST' || defaultMethod === 'PUT' || defaultMethod === 'PATCH') {
+                body = prompt('Request body (JSON):', '{"key": "value"}') || '';
+            }
+            
+            playBeep();
+            addTerminalLine(`HTTP-${defaultMethod}`, `Requesting ${url}...`);
+            await executeCommand('fetch_url', { url, method: defaultMethod, body });
+        }
+
+        async function fetchEndpoint(path) {
+            playBeep();
+            addTerminalLine('API-FETCH', `Fetching ${path}...`);
+            try {
+                const start = Date.now();
+                const response = await fetch(path);
+                const ms = Date.now() - start;
+                const data = await response.json();
+                addTerminalLine(`API-RESPONSE (${ms}ms)`, JSON.stringify(data, null, 2));
+                
+                // Update uptime display if fetching status
+                if (path === '/api/status' || path === '/api/metrics') {
+                    const uptimeEl = document.getElementById('endpoint-uptime');
+                    if (uptimeEl && data.uptime) {
+                        uptimeEl.textContent = Math.round(data.uptime) + 's';
+                    }
+                }
+            } catch (e) {
+                playErrorSound();
+                addTerminalLine('API-ERROR', `Failed: ${e.message}`, true);
+            }
+        }
+
+        async function showLiveMetrics() {
+            playBeep();
+            addTerminalLine('METRICS', 'Fetching live system metrics...');
+            try {
+                const data = await apiCall('/api/metrics');
+                addTerminalLine('CPU', `Load avg: ${data.cpu.loadavg['1m'].toFixed(2)} (1m) / ${data.cpu.loadavg['5m'].toFixed(2)} (5m) | Est. usage: ${data.cpu.usagePercent}% | Cores: ${data.cpu.count}`);
+                addTerminalLine('MEMORY', `Used: ${data.memory.usedFormatted} / ${data.memory.totalFormatted} (${data.memory.usagePercent}%) | Free: ${data.memory.freeFormatted}`);
+                addTerminalLine('PROCESS', `PID: ${data.process.pid} | Uptime: ${data.process.uptime}s | Node: ${data.process.version} | Heap: ${data.process.memory.heapUsed}`);
+                addTerminalLine('SYSTEM', `Host: ${data.system.hostname} | Platform: ${data.system.platform}/${data.system.arch} | Uptime: ${Math.round(data.system.uptime / 60)}m`);
+            } catch (e) {
+                playErrorSound();
+                addTerminalLine('METRICS-ERROR', `Failed: ${e.message}`, true);
+            }
+        }
+
+        // =====================================================
+        // Environment Variable Functions
+        // =====================================================
+        function searchEnvVar() {
+            const filter = prompt('Search environment variables (name contains):');
+            if (filter) {
+                playBeep();
+                executeCommand('env_list', { filter });
+            }
+        }
+
+        // =====================================================
+        // File Management Functions (new server-backed)
+        // =====================================================
+        function promptFileStats() {
+            const filepath = prompt('File or directory path:', 'package.json');
+            if (filepath) {
+                playBeep();
+                executeCommand('file_stats', { filepath });
+            }
+        }
+
+        function promptDeleteFile() {
+            const filepath = prompt('File to delete:');
+            if (!filepath) return;
+            const recursive = confirm(`Delete "${filepath}"?\nOK = delete (recursive for dirs)\nCancel = abort`);
+            if (recursive) {
+                playBeep();
+                executeCommand('delete_file', { filepath, recursive: true });
+            }
+        }
+
+        function promptMoveFile() {
+            const source = prompt('Source file path:');
+            if (!source) return;
+            const destination = prompt('Destination path (or new name):');
+            if (destination) {
+                playBeep();
+                executeCommand('move_file', { source, destination });
+            }
+        }
+
+        function promptCopyFile() {
+            const source = prompt('Source file path:');
+            if (!source) return;
+            const destination = prompt('Destination path:');
+            if (destination) {
+                playBeep();
+                executeCommand('copy_file', { source, destination });
+            }
+        }
+
+        function promptFindFiles() {
+            const pattern = prompt('File name pattern (e.g. *.js, server*):', '*.js');
+            if (!pattern) return;
+            const directory = prompt('Search in directory:', '.') || '.';
+            const maxdepth = parseInt(prompt('Max depth:', '5') || '5');
+            playBeep();
+            executeCommand('find_files', { pattern, directory, maxdepth });
+        }
+
+        // =====================================================
         // Auto-Refresh System
         // =====================================================
         function startAutoRefresh(intervalMs = 30000) {
@@ -3473,22 +3687,56 @@
             }, 1000);
         }
 
+        let analyticsRealMetrics = null;
+        let analyticsMetricsFetchCounter = 0;
+
+        async function fetchRealMetrics() {
+            try {
+                const m = await apiCall('/api/metrics');
+                analyticsRealMetrics = m;
+                const uptimeEl = document.getElementById('endpoint-uptime');
+                if (uptimeEl && m.process) uptimeEl.textContent = m.process.uptime + 's';
+            } catch (e) {
+                // Keep using simulated data on fetch failure
+            }
+        }
+
         function updateAnalyticsData() {
-            // Simulate real-time data updates
+            // Fetch real metrics every 5 seconds (every 5th tick)
+            analyticsMetricsFetchCounter++;
+            if (analyticsMetricsFetchCounter % 5 === 0) {
+                fetchRealMetrics();
+            }
+
             const now = Date.now();
-            
-            // CPU - oscillate with some randomness
-            const baseCpu = 15 + Math.sin(now / 5000) * 10;
-            const cpuNoise = (Math.random() - 0.5) * 20;
-            const newCpu = Math.max(5, Math.min(95, baseCpu + cpuNoise));
+
+            // CPU - use real data when available, otherwise simulate
+            let newCpu;
+            if (analyticsRealMetrics && analyticsRealMetrics.cpu) {
+                const realCpu = analyticsRealMetrics.cpu.usagePercent;
+                // Blend real data with a tiny noise to keep the chart animated
+                const noise = (Math.random() - 0.5) * 4;
+                newCpu = Math.max(1, Math.min(99, realCpu + noise));
+            } else {
+                const baseCpu = 15 + Math.sin(now / 5000) * 10;
+                const cpuNoise = (Math.random() - 0.5) * 20;
+                newCpu = Math.max(5, Math.min(95, baseCpu + cpuNoise));
+            }
             analyticsState.cpuHistory.push(newCpu);
             analyticsState.cpuHistory.shift();
             if (newCpu > analyticsState.peakCpu) analyticsState.peakCpu = newCpu;
 
-            // Memory - slowly increasing trend with noise
-            const baseMem = 40 + Math.sin(now / 10000) * 5;
-            const memNoise = (Math.random() - 0.5) * 8;
-            const newMem = Math.max(20, Math.min(90, baseMem + memNoise));
+            // Memory - use real data when available
+            let newMem;
+            if (analyticsRealMetrics && analyticsRealMetrics.memory) {
+                const realMem = analyticsRealMetrics.memory.usagePercent;
+                const noise = (Math.random() - 0.5) * 2;
+                newMem = Math.max(1, Math.min(99, realMem + noise));
+            } else {
+                const baseMem = 40 + Math.sin(now / 10000) * 5;
+                const memNoise = (Math.random() - 0.5) * 8;
+                newMem = Math.max(20, Math.min(90, baseMem + memNoise));
+            }
             analyticsState.memoryHistory.push(newMem);
             analyticsState.memoryHistory.shift();
             if (newMem > analyticsState.peakMemory) analyticsState.peakMemory = newMem;
@@ -3875,6 +4123,7 @@
             
             // Initialize real-time analytics
             initializeAnalytics();
+            fetchRealMetrics(); // Prime real metrics immediately
             
             // Check server and load initial data
             try {
