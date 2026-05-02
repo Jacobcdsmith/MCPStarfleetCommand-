@@ -756,6 +756,23 @@
             will-change: transform;
         }
 
+        /* Tool cards / prompt cards: same curve as the rest of the app,
+           with snappier active state and ripple host. */
+        .tool-card {
+            transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        box-shadow 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        border-color 0.3s ease !important;
+            will-change: transform;
+            overflow: hidden;
+        }
+        .tool-card:hover {
+            transform: translateY(-3px);
+        }
+        .tool-card:active {
+            transform: translateY(-1px) scale(0.99);
+            transition-duration: 0.08s;
+        }
+
         .servers-panel:hover,
         .toolbox-panel:hover,
         .inspector-panel:hover,
@@ -816,7 +833,8 @@
         .add-server-btn .ripple,
         .server-btn .ripple,
         .modal-btn .ripple,
-        .execute-btn .ripple {
+        .execute-btn .ripple,
+        .tool-card .ripple {
             position: absolute;
             border-radius: 50%;
             transform: scale(0);
@@ -841,7 +859,8 @@
             .server-btn,
             .modal-btn,
             .execute-btn,
-            .server-card {
+            .server-card,
+            .tool-card {
                 animation: none !important;
                 animation-duration: 0.01ms !important;
                 animation-delay: 0ms !important;
@@ -852,7 +871,8 @@
             .toolbox-panel:hover,
             .inspector-panel:hover,
             .messages-feed:hover,
-            .server-card:hover {
+            .server-card:hover,
+            .tool-card:hover {
                 transform: none !important;
             }
             html { scroll-behavior: auto; }
@@ -1745,7 +1765,7 @@
             if (reduce) return;
             document.addEventListener('pointerdown', (e) => {
                 const target = e.target.closest(
-                    '.add-server-btn, .server-btn, .modal-btn, .execute-btn'
+                    '.add-server-btn, .server-btn, .modal-btn, .execute-btn, .tool-card'
                 );
                 if (!target) return;
                 const rect = target.getBoundingClientRect();

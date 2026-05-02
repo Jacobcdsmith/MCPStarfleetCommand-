@@ -276,7 +276,7 @@ function attachRippleFeedback() {
         window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduce) return;
     document.addEventListener('pointerdown', (e) => {
-        const target = e.target.closest('.lcars-btn, .back-btn, .tool-card, .hub-card');
+        const target = e.target.closest('.lcars-btn, .back-btn, .tool-card, .hub-card, .quick-link');
         if (!target) return;
         const rect = target.getBoundingClientRect();
         const size = Math.max(rect.width, rect.height) * 0.6;
@@ -307,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(checkServerStatus, 30000);
     
     // Add hover sounds
-    document.querySelectorAll('.lcars-btn, .tool-card, .back-btn, .hub-card').forEach(el => {
+    document.querySelectorAll('.lcars-btn, .tool-card, .back-btn, .hub-card, .quick-link').forEach(el => {
         el.addEventListener('mouseenter', () => playBeep(600, 0.05));
     });
 

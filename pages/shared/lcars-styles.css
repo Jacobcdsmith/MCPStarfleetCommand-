@@ -257,6 +257,38 @@ body::before {
     will-change: transform;
 }
 
+/* Hover lift parity. Page-local :hover rules already supply
+   page-specific glows; this layer adds the matching translateY
+   so Red Team and the Hub feel as responsive as .lcars-panel. */
+.rt-panel:hover,
+.hub-card:hover {
+    transform: translateY(-4px);
+}
+
+/* Quick-link buttons (module hub) — parity transition + ripple host.
+   Page-local :hover keeps its scale(1.05) + gold glow; we just
+   upgrade the curve so the motion matches the rest of the app. */
+.quick-link {
+    transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+                box-shadow 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+                background 0.28s ease !important;
+    position: relative;
+    overflow: hidden;
+    will-change: transform;
+}
+.quick-link:active {
+    transform: scale(0.97);
+    transition-duration: 0.08s;
+}
+.quick-link .ripple {
+    position: absolute;
+    border-radius: 50%;
+    transform: scale(0);
+    background: rgba(255,255,255,0.35);
+    pointer-events: none;
+    animation: rippleFx 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
 .lcars-panel::before {
     content: '';
     position: absolute;
@@ -443,7 +475,8 @@ body::before {
 .lcars-btn .ripple,
 .back-btn .ripple,
 .tool-card .ripple,
-.hub-card .ripple {
+.hub-card .ripple,
+.quick-link .ripple {
     position: absolute;
     border-radius: 50%;
     transform: scale(0);
@@ -465,7 +498,8 @@ body::before {
     .hub-card,
     .lcars-btn,
     .tool-card,
-    .back-btn {
+    .back-btn,
+    .quick-link {
         animation: none !important;
         animation-duration: 0.01ms !important;
         animation-delay: 0ms !important;
@@ -475,7 +509,8 @@ body::before {
     .lcars-panel:hover,
     .rt-panel:hover,
     .hub-card:hover,
-    .tool-card:hover {
+    .tool-card:hover,
+    .quick-link:hover {
         transform: none !important;
     }
     html { scroll-behavior: auto; }
