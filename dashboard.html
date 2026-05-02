@@ -3672,45 +3672,104 @@
         // =====================================================
         // Terminal System
         // =====================================================
+        const TERMINAL_HISTORY_KEY = 'lcars.terminal.history';
+        const TERMINAL_HISTORY_MAX_LINES = 100;
+        const TERMINAL_HISTORY_MAX_BYTES = 64 * 1024;
+        let terminalHistory = [];
+
+        function loadTerminalHistory() {
+            try {
+                const raw = localStorage.getItem(TERMINAL_HISTORY_KEY);
+                if (!raw) return;
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed)) {
+                    terminalHistory = parsed
+                        .filter(e => e && typeof e === 'object')
+                        .slice(-TERMINAL_HISTORY_MAX_LINES);
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        function saveTerminalHistory() {
+            try {
+                let serialized = JSON.stringify(terminalHistory);
+                while (serialized.length > TERMINAL_HISTORY_MAX_BYTES && terminalHistory.length > 1) {
+                    terminalHistory.shift();
+                    serialized = JSON.stringify(terminalHistory);
+                }
+                localStorage.setItem(TERMINAL_HISTORY_KEY, serialized);
+            } catch (e) { /* ignore */ }
+        }
+
+        function renderTerminalEntry(entry) {
+            const terminal = document.getElementById('terminal-content');
+            if (!terminal) return;
+
+            const emptyState = document.getElementById('console-empty-state');
+            if (emptyState) emptyState.style.display = 'none';
+
+            const commandLine = document.createElement('div');
+            commandLine.className = 'terminal-line';
+            commandLine.innerHTML = `<span class="terminal-prompt">STARDATE ${escapeHtml(entry.stardate || '')} </span><span class="terminal-command">${escapeHtml(entry.command || '')}</span>`;
+
+            const outputLine = document.createElement('div');
+            outputLine.className = `terminal-line terminal-output ${entry.isError ? 'error' : ''}`;
+
+            const pre = document.createElement('pre');
+            pre.style.cssText = 'margin: 0; white-space: pre-wrap; word-wrap: break-word; font-family: inherit;';
+            pre.textContent = entry.output != null ? String(entry.output) : '';
+            outputLine.appendChild(pre);
+
+            terminal.appendChild(commandLine);
+            terminal.appendChild(outputLine);
+        }
+
+        function restoreTerminalHistory() {
+            if (!terminalHistory.length) return;
+            for (const entry of terminalHistory) renderTerminalEntry(entry);
+            const terminal = document.getElementById('terminal-content');
+            if (terminal) {
+                // Keep the same DOM cap parity as the live append path
+                while (terminal.children.length > 102) {
+                    terminal.removeChild(terminal.firstChild);
+                }
+                terminal.scrollTop = terminal.scrollHeight;
+            }
+        }
+
         function addTerminalLine(command, output, isError = false) {
             const terminal = document.getElementById('terminal-content');
             if (!terminal) return;
 
-            // Hide empty state placeholder on first output
-            const emptyState = document.getElementById('console-empty-state');
-            if (emptyState) emptyState.style.display = 'none';
-            
             const stardate = generateStardate();
-            
-            // Command line
-            const commandLine = document.createElement('div');
-            commandLine.className = 'terminal-line';
-            commandLine.innerHTML = `<span class="terminal-prompt">STARDATE ${stardate} </span><span class="terminal-command">${escapeHtml(command)}</span>`;
-            
-            // Output line (handle multi-line output)
-            const outputLine = document.createElement('div');
-            outputLine.className = `terminal-line terminal-output ${isError ? 'error' : ''}`;
-            
+
             // Format output - handle JSON and multi-line
             let formattedOutput = output;
             if (typeof output === 'object') {
                 formattedOutput = JSON.stringify(output, null, 2);
             }
-            
-            // Create pre element for formatted output
-            const pre = document.createElement('pre');
-            pre.style.cssText = 'margin: 0; white-space: pre-wrap; word-wrap: break-word; font-family: inherit;';
-            pre.textContent = formattedOutput;
-            outputLine.appendChild(pre);
-            
-            terminal.appendChild(commandLine);
-            terminal.appendChild(outputLine);
+
+            const entry = {
+                command: String(command == null ? '' : command),
+                output: formattedOutput == null ? '' : String(formattedOutput),
+                isError: !!isError,
+                stardate: stardate
+            };
+
+            renderTerminalEntry(entry);
             terminal.scrollTop = terminal.scrollHeight;
-            
-            // Limit terminal history
+
+            // Limit terminal DOM history
             while (terminal.children.length > 102) {
                 terminal.removeChild(terminal.firstChild);
             }
+
+            // Persist (capped to last N entries / byte budget)
+            terminalHistory.push(entry);
+            if (terminalHistory.length > TERMINAL_HISTORY_MAX_LINES) {
+                terminalHistory.splice(0, terminalHistory.length - TERMINAL_HISTORY_MAX_LINES);
+            }
+            saveTerminalHistory();
 
             // Notify floating-terminal layer (badge / pulse if collapsed)
             if (typeof notifyTerminalActivity === 'function') {
@@ -3932,6 +3991,10 @@
                     <div class="console-empty-text">Console cleared — activate any tool<br>to see results here</div>
                 </div>
             `;
+
+            // Wipe persisted scrollback so a reload also starts fresh
+            terminalHistory = [];
+            try { localStorage.removeItem(TERMINAL_HISTORY_KEY); } catch (e) { /* ignore */ }
         }
 
         function escapeHtml(text) {
@@ -5996,6 +6059,10 @@
             applyTerminalState();
             initTerminalDrag();
             updateUnreadBadge();
+
+            // Restore prior console scrollback (persisted across reloads)
+            loadTerminalHistory();
+            restoreTerminalHistory();
 
             // Check server and load initial data
             try {
