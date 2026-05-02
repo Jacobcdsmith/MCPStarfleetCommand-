@@ -34,6 +34,10 @@
             box-sizing: border-box;
         }
 
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
             font-family: 'Rajdhani', 'Orbitron', monospace;
             background: radial-gradient(ellipse at center, #001122 0%, #000000 100%);
@@ -42,6 +46,9 @@
             color: var(--lcars-light-blue);
             overflow-x: hidden;
             position: relative;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
         }
 
         /* Starfield Background */
@@ -220,16 +227,31 @@
             padding: 0;
             position: relative;
             overflow: hidden;
-            transition: all 0.3s ease;
+            transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        box-shadow 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        border-color 0.3s ease;
             backdrop-filter: blur(10px);
+            will-change: transform;
         }
 
         .lcars-panel:hover {
-            transform: translateY(-8px);
-            box-shadow: 
-                0 20px 40px rgba(0,0,0,0.3),
-                0 0 50px var(--lcars-orange);
+            transform: translateY(-4px);
+            box-shadow:
+                0 14px 28px rgba(0,0,0,0.35),
+                0 0 36px rgba(255,153,0,0.45);
             border-color: var(--enterprise-gold);
+        }
+
+        /* Staggered entrance: each panel fades up with a delay set per-element */
+        .lcars-panel.lcars-enter {
+            opacity: 0;
+            transform: translateY(18px);
+            animation: lcarsPanelEnter 0.6s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+            animation-delay: var(--enter-delay, 0ms);
+        }
+        @keyframes lcarsPanelEnter {
+            from { opacity: 0; transform: translateY(18px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
         .lcars-panel::before {
@@ -384,9 +406,13 @@
             border-radius: 20px 0 20px 0;
             padding: 18px 25px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        box-shadow 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        background 0.28s ease,
+                        border-color 0.28s ease;
             position: relative;
             overflow: hidden;
+            will-change: transform;
         }
 
         .lcars-button::before {
@@ -397,14 +423,15 @@
             height: 100%;
             width: 8px;
             background: var(--lcars-orange);
-            transition: width 0.3s ease;
+            transition: width 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        background 0.28s ease;
         }
 
         .lcars-button:hover {
             background: linear-gradient(45deg, var(--lcars-light-blue) 0%, var(--lcars-blue) 100%);
             border-color: var(--enterprise-gold);
-            transform: translateX(10px);
-            box-shadow: 0 0 30px var(--lcars-orange);
+            transform: translateX(6px);
+            box-shadow: 0 6px 22px rgba(255,153,0,0.45);
         }
 
         .lcars-button:hover::before {
@@ -413,8 +440,24 @@
         }
 
         .lcars-button:active {
-            transform: translateX(10px) scale(0.98);
-            box-shadow: 0 0 50px var(--enterprise-gold), inset 0 0 20px rgba(255,255,255,0.2);
+            transform: translateX(6px) scale(0.97);
+            transition-duration: 0.08s;
+            box-shadow: 0 0 36px var(--enterprise-gold), inset 0 0 14px rgba(255,255,255,0.18);
+        }
+
+        /* Ripple feedback added by JS via pointerdown */
+        .lcars-button .ripple,
+        .nav-link .ripple,
+        .lcars-control-btn .ripple {
+            position: absolute;
+            border-radius: 50%;
+            transform: scale(0);
+            background: rgba(255,255,255,0.35);
+            pointer-events: none;
+            animation: rippleFx 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+        @keyframes rippleFx {
+            to { transform: scale(2.4); opacity: 0; }
         }
 
         .tool-name {
@@ -752,6 +795,8 @@
             cursor: pointer;
             transition: all 0.3s ease;
             text-decoration: none;
+            position: relative;
+            overflow: hidden;
             display: inline-block;
             text-align: center;
             text-transform: uppercase;
@@ -1925,17 +1970,25 @@
             text-decoration: none;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            transition: all 0.2s ease;
+            transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        box-shadow 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        background 0.25s ease,
+                        border-color 0.25s ease,
+                        color 0.25s ease;
             white-space: nowrap;
+            position: relative;
+            overflow: hidden;
+            will-change: transform;
         }
 
         .nav-link:hover {
             background: linear-gradient(45deg, var(--lcars-light-blue), var(--lcars-blue));
             border-color: var(--enterprise-gold);
-            box-shadow: 0 0 15px rgba(255,215,0,0.4);
+            box-shadow: 0 4px 14px rgba(255,215,0,0.4);
             transform: translateY(-2px);
             color: var(--lcars-black);
         }
+        .nav-link:active { transform: translateY(0) scale(0.97); transition-duration: 0.08s; }
 
         .nav-link.hub {
             background: var(--lcars-orange);
@@ -2228,11 +2281,203 @@
 
         @media (prefers-reduced-motion: reduce) {
             #starfleet-intro,
-            #starfleet-intro * {
+            #starfleet-intro *,
+            .lcars-panel.lcars-enter,
+            #lcars-tutorial,
+            #lcars-tutorial * {
                 animation-duration: 0.01ms !important;
                 animation-delay: 0ms !important;
                 transition-duration: 0.01ms !important;
             }
+            html { scroll-behavior: auto; }
+        }
+
+        /* =====================================================
+           LCARS GUIDED TOUR (Tutorial)
+           ===================================================== */
+        .nav-link.tour {
+            background: linear-gradient(45deg, #5b3a8e, #8a4dd0);
+            border-color: var(--enterprise-gold);
+            color: #fff;
+        }
+        .nav-link.tour:hover {
+            background: linear-gradient(45deg, #8a4dd0, #b06fff);
+            color: #fff;
+        }
+
+        #lcars-tutorial {
+            position: fixed;
+            inset: 0;
+            z-index: 99990;
+            pointer-events: none;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.35s ease, visibility 0.35s ease;
+        }
+        #lcars-tutorial.show {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        /* Backdrop with a punched-out spotlight via radial-gradient mask */
+        .tutorial-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 8, 24, 0.78);
+            backdrop-filter: blur(2px);
+            transition: clip-path 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        /* Animated highlight ring around the spotlight target */
+        .tutorial-ring {
+            position: absolute;
+            border: 2px solid var(--lcars-orange);
+            border-radius: 14px;
+            box-shadow:
+                0 0 0 4px rgba(255,153,0,0.18),
+                0 0 28px rgba(255,153,0,0.55);
+            pointer-events: none;
+            transition: top 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        left 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        width 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        height 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+            animation: tutorialRingPulse 1.8s ease-in-out infinite;
+        }
+        @keyframes tutorialRingPulse {
+            0%,100% { box-shadow: 0 0 0 4px rgba(255,153,0,0.18), 0 0 22px rgba(255,153,0,0.5); }
+            50%     { box-shadow: 0 0 0 8px rgba(255,153,0,0.28), 0 0 38px rgba(255,153,0,0.85); }
+        }
+
+        /* Tooltip card */
+        .tutorial-card {
+            position: absolute;
+            width: min(380px, calc(100vw - 40px));
+            background: linear-gradient(135deg, #0d0d2e 0%, #1a1240 100%);
+            border: 2px solid var(--lcars-orange);
+            border-radius: 18px 0 18px 0;
+            color: var(--lcars-white);
+            font-family: 'Rajdhani', sans-serif;
+            box-shadow: 0 18px 50px rgba(0,0,0,0.6), 0 0 30px rgba(255,153,0,0.35);
+            transition: top 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        left 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        opacity 0.35s ease;
+            overflow: hidden;
+        }
+        .tutorial-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: linear-gradient(90deg,
+                var(--lcars-orange),
+                var(--enterprise-gold),
+                var(--lcars-purple),
+                var(--lcars-blue));
+            background-size: 200% 100%;
+            animation: lcarsStrip 3s linear infinite;
+        }
+        .tutorial-card-body {
+            padding: 18px 22px 12px;
+        }
+        .tutorial-card .step-eyebrow {
+            font-family: 'Orbitron', monospace;
+            font-size: 11px;
+            letter-spacing: 0.3em;
+            color: var(--enterprise-gold);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .tutorial-card h3 {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.15rem;
+            font-weight: 900;
+            color: var(--lcars-orange);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin: 0 0 10px;
+        }
+        .tutorial-card p {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: var(--lcars-light-blue);
+            margin: 0;
+        }
+        .tutorial-card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 22px 16px;
+            gap: 12px;
+            border-top: 1px solid rgba(255,153,0,0.18);
+            margin-top: 10px;
+        }
+        .tutorial-progress {
+            display: flex;
+            gap: 5px;
+        }
+        .tutorial-progress .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: rgba(85,85,255,0.4);
+            transition: background 0.3s ease, transform 0.3s ease;
+        }
+        .tutorial-progress .dot.done   { background: var(--lcars-orange); }
+        .tutorial-progress .dot.active { background: var(--enterprise-gold); transform: scale(1.5); }
+
+        .tutorial-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        .tutorial-btn {
+            font-family: 'Orbitron', monospace;
+            font-size: 11px;
+            letter-spacing: 0.12em;
+            padding: 8px 14px;
+            border-radius: 14px 0 14px 0;
+            border: 2px solid var(--lcars-orange);
+            background: transparent;
+            color: var(--lcars-orange);
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: background 0.2s ease, color 0.2s ease,
+                        transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        box-shadow 0.2s ease;
+        }
+        .tutorial-btn:hover {
+            background: var(--lcars-orange);
+            color: #000;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(255,153,0,0.45);
+        }
+        .tutorial-btn.primary {
+            background: var(--lcars-orange);
+            color: #000;
+        }
+        .tutorial-btn.primary:hover {
+            background: var(--enterprise-gold);
+            border-color: var(--enterprise-gold);
+        }
+        .tutorial-btn.skip {
+            border-color: rgba(255,153,0,0.4);
+            color: rgba(255,153,0,0.7);
+        }
+        .tutorial-btn.skip:hover {
+            background: rgba(255,153,0,0.15);
+            color: var(--lcars-orange);
+            box-shadow: none;
+        }
+
+        /* Element being highlighted gets lifted above the backdrop */
+        .tutorial-spot-target {
+            position: relative;
+            z-index: 99991 !important;
+        }
+
+        /* Mobile fallback: card centered at bottom */
+        @media (max-width: 720px) {
+            .tutorial-card { width: calc(100vw - 24px); left: 12px !important; }
         }
     </style>
 </head>
@@ -2282,6 +2527,29 @@
         <div class="intro-skip">PRESS <kbd>SPACE</kbd> OR <kbd>ESC</kbd> TO SKIP</div>
     </div>
 
+    <!-- =====================================================
+         GUIDED TOUR (Tutorial Overlay)
+         ===================================================== -->
+    <div id="lcars-tutorial" role="dialog" aria-modal="true" aria-label="Starfleet Command Tour">
+        <div class="tutorial-backdrop" id="tutorialBackdrop"></div>
+        <div class="tutorial-ring" id="tutorialRing"></div>
+        <div class="tutorial-card" id="tutorialCard">
+            <div class="tutorial-card-body">
+                <div class="step-eyebrow" id="tutorialEyebrow">STEP 1 OF 7</div>
+                <h3 id="tutorialTitle">Welcome aboard, Commander</h3>
+                <p id="tutorialBody">Body text goes here.</p>
+            </div>
+            <div class="tutorial-card-footer">
+                <div class="tutorial-progress" id="tutorialProgress"></div>
+                <div class="tutorial-buttons">
+                    <button type="button" class="tutorial-btn skip" onclick="endTutorial()">Skip</button>
+                    <button type="button" class="tutorial-btn"      id="tutorialPrevBtn" onclick="prevTutorialStep()">◀ Back</button>
+                    <button type="button" class="tutorial-btn primary" id="tutorialNextBtn" onclick="nextTutorialStep()">Next ▶</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Audio elements for LCARS sounds -->
     <audio class="audio-feedback" id="buttonBeep" preload="auto">
         <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmsbBTaQ2PCKQQsSteLvw2QcBzqM0fPQfycFJHfH8N2QQAoUXrTp66hVFApGn+DyvmsbBTaQ2PCKQQsTteLvw2QcBzqM0fPQfycFJHfH8N2QQAoUXrTp66hVFApGn+DyvmsbBTaQ2PCKQQsSteLvw2QcBzqM0fPQfycFJHfH8N2QQAoUXrTp66hVFApGn+DyvmsbBTaQ2PCKQQsSteLvw2QcBzqM0fPQfycFJHfH8N2QQAoUXrTp66hVFApGn+DyvmsbBTaQ2PCKQQsSteLvw2QcBzqM0fPQfycFJHfH8N2QQAoUXrTp66hVFApGn+DyvmsbBTaQ2PC" type="audio/wav">
@@ -2313,6 +2581,8 @@
             <a href="/pages/services.html" class="nav-link">⚙️ Services</a>
             <div class="nav-divider"></div>
             <a href="/pages/redteam.html"  class="nav-link redteam">⚔️ Red Team</a>
+            <div class="nav-divider"></div>
+            <button type="button" class="nav-link tour" id="tourTrigger" onclick="startTutorial(true)" title="Start guided tour">🎓 Tour</button>
         </nav>
 
         <div class="main-pane">
@@ -3583,6 +3853,9 @@
                     setTimeout(() => { overlay.remove(); }, 800);
                     document.removeEventListener('keydown', onKey, true);
                     overlay.removeEventListener('click', dismiss);
+                    // Notify the rest of the app that the intro is gone so
+                    // entrance animations + first-run tutorial can fire.
+                    document.dispatchEvent(new CustomEvent('starfleet:ready'));
                 }
 
                 function onKey(e) {
@@ -3607,7 +3880,336 @@
                 runIntro();
             }
         })();
-        
+
+        // =====================================================
+        // STAGGERED PANEL ENTRANCE + RIPPLE FEEDBACK
+        // =====================================================
+        let _entranceAnimationsApplied = false;
+        function applyEntranceAnimations() {
+            // Guard: both starfleet:ready and the DOMContentLoaded safety-net
+            // can call this — make sure the cascade runs at most once.
+            if (_entranceAnimationsApplied) return;
+            _entranceAnimationsApplied = true;
+            const reduce = window.matchMedia &&
+                window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (reduce) return;
+            // Stagger every visible panel — only those above the fold get
+            // the entrance; the rest fade in as soon as the user scrolls
+            // to them via IntersectionObserver.
+            const panels = document.querySelectorAll('.lcars-panel');
+            const io = ('IntersectionObserver' in window)
+                ? new IntersectionObserver((entries, obs) => {
+                    entries.forEach((entry, i) => {
+                        if (!entry.isIntersecting) return;
+                        const el = entry.target;
+                        // Reset any inline delay before adding the class so
+                        // late-entering panels don't all share the initial
+                        // staggered cascade.
+                        el.style.setProperty('--enter-delay',
+                            (Math.min(i * 60, 240)) + 'ms');
+                        el.classList.add('lcars-enter');
+                        obs.unobserve(el);
+                    });
+                }, { rootMargin: '60px' })
+                : null;
+
+            // Above-the-fold cascade for the first batch
+            const initialBatch = Array.from(panels).slice(0, 6);
+            initialBatch.forEach((p, i) => {
+                p.style.setProperty('--enter-delay', (i * 70) + 'ms');
+                p.classList.add('lcars-enter');
+            });
+            // Observer for the rest
+            Array.from(panels).slice(6).forEach(p => {
+                if (io) io.observe(p);
+                else { p.style.setProperty('--enter-delay', '0ms'); p.classList.add('lcars-enter'); }
+            });
+        }
+
+        function attachRippleFeedback() {
+            const reduce = window.matchMedia &&
+                window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (reduce) return;
+            document.addEventListener('pointerdown', (e) => {
+                const target = e.target.closest('.lcars-button, .nav-link, .lcars-control-btn');
+                if (!target) return;
+                const rect = target.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height) * 0.6;
+                const ripple = document.createElement('span');
+                ripple.className = 'ripple';
+                ripple.style.width  = size + 'px';
+                ripple.style.height = size + 'px';
+                ripple.style.left   = (e.clientX - rect.left - size / 2) + 'px';
+                ripple.style.top    = (e.clientY - rect.top  - size / 2) + 'px';
+                target.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 600);
+            }, { passive: true });
+        }
+
+        // Trigger the smoothness pass once the intro is gone (or immediately
+        // if the intro isn't present, e.g. for prefers-reduced-motion users).
+        document.addEventListener('starfleet:ready', () => {
+            applyEntranceAnimations();
+            // Auto-launch the guided tour the first time a user lands.
+            if (!localStorage.getItem('lcars.tutorial.completed')) {
+                setTimeout(() => startTutorial(false), 800);
+            }
+        }, { once: true });
+        document.addEventListener('DOMContentLoaded', () => {
+            attachRippleFeedback();
+            // Safety net: if intro element is somehow already gone (e.g. a
+            // hot-reload), still apply entrance animations.
+            if (!document.getElementById('starfleet-intro')) {
+                applyEntranceAnimations();
+                if (!localStorage.getItem('lcars.tutorial.completed')) {
+                    setTimeout(() => startTutorial(false), 600);
+                }
+            }
+        }, { once: true });
+
+        // =====================================================
+        // GUIDED TOUR (Tutorial) — first-run + replayable from "🎓 Tour"
+        // =====================================================
+        const TUTORIAL_STEPS = [
+            {
+                selector: '.lcars-header',
+                title: 'Welcome aboard, Commander',
+                body: 'This is Starfleet Command — the bridge of your MCP server. Live system status, stardate clock, and the warp core indicator all live up here.',
+                placement: 'bottom'
+            },
+            {
+                selector: '.nav-bar',
+                title: 'Module Navigation',
+                body: 'Jump between mission modules — Git, Files, System, Network, Data, Docker, Analytics, Services, and the Red Team testing range. The Module Hub is your command directory.',
+                placement: 'bottom'
+            },
+            {
+                selector: '.lcars-grid > .lcars-panel',
+                title: 'Tool Panels',
+                body: 'Each panel groups related tools. Click any glowing LCARS button to fire that tool — output streams into the floating console.',
+                placement: 'right'
+            },
+            {
+                selector: '#console-toggle-pill',
+                title: 'Floating Console',
+                body: 'Tap this pill (or hit Ctrl+`) to summon the output console. It floats over the dashboard, can be dragged and maximized, and remembers your last position. The badge pulses red when new output arrives while it\'s closed.',
+                placement: 'left'
+            },
+            {
+                selector: '#stardate',
+                title: 'Stardate Clock',
+                body: 'Real-time stardate, updated every second. Because nothing says "command interface" like a stardate that ticks up while you work.',
+                placement: 'bottom'
+            },
+            {
+                selector: '#tourTrigger',
+                title: 'Replay anytime',
+                body: 'You can replay this tour anytime by clicking the 🎓 Tour button up here. Skip with Esc, advance with → or Enter, go back with ←.',
+                placement: 'bottom'
+            },
+            {
+                selector: 'body',
+                title: 'You have the conn',
+                body: 'That\'s the bridge. 40 MCP tools across 8 categories, live analytics, security testing, digital forensics, and a Red Team range — all yours. Engage.',
+                placement: 'center',
+                isFinal: true
+            }
+        ];
+
+        let tutorialIndex = 0;
+        let tutorialActive = false;
+        let tutorialPrevTarget = null;
+        let tutorialKeyHandler = null;
+        let tutorialResizeHandler = null;
+
+        function startTutorial(forceReplay) {
+            const overlay = document.getElementById('lcars-tutorial');
+            if (!overlay) return;
+            // If user manually clicks Tour, always run; otherwise skip if they
+            // already finished it once.
+            if (!forceReplay && localStorage.getItem('lcars.tutorial.completed')) return;
+            tutorialIndex = 0;
+            tutorialActive = true;
+            overlay.classList.add('show');
+            renderTutorialStep();
+            // Keyboard shortcuts during the tour
+            tutorialKeyHandler = (e) => {
+                if (!tutorialActive) return;
+                if (e.key === 'Escape') { e.preventDefault(); endTutorial(); }
+                else if (e.key === 'ArrowRight' || e.key === 'Enter') { e.preventDefault(); nextTutorialStep(); }
+                else if (e.key === 'ArrowLeft') { e.preventDefault(); prevTutorialStep(); }
+            };
+            // Capture phase + stopImmediatePropagation in onKey would be
+            // overkill here — we only intercept tour-relevant keys.
+            document.addEventListener('keydown', tutorialKeyHandler);
+            tutorialResizeHandler = () => renderTutorialStep();
+            window.addEventListener('resize', tutorialResizeHandler);
+        }
+
+        function endTutorial() {
+            const overlay = document.getElementById('lcars-tutorial');
+            if (!overlay) return;
+            tutorialActive = false;
+            overlay.classList.remove('show');
+            if (tutorialPrevTarget) {
+                tutorialPrevTarget.classList.remove('tutorial-spot-target');
+                tutorialPrevTarget = null;
+            }
+            if (tutorialKeyHandler) {
+                document.removeEventListener('keydown', tutorialKeyHandler);
+                tutorialKeyHandler = null;
+            }
+            if (tutorialResizeHandler) {
+                window.removeEventListener('resize', tutorialResizeHandler);
+                tutorialResizeHandler = null;
+            }
+            // Mark completed so it doesn't auto-launch again next visit.
+            try { localStorage.setItem('lcars.tutorial.completed', '1'); } catch (_) {}
+        }
+
+        function nextTutorialStep() {
+            if (tutorialIndex >= TUTORIAL_STEPS.length - 1) {
+                endTutorial();
+                return;
+            }
+            tutorialIndex++;
+            renderTutorialStep();
+        }
+
+        function prevTutorialStep() {
+            if (tutorialIndex <= 0) return;
+            tutorialIndex--;
+            renderTutorialStep();
+        }
+
+        function renderTutorialStep() {
+            const step  = TUTORIAL_STEPS[tutorialIndex];
+            const card  = document.getElementById('tutorialCard');
+            const ring  = document.getElementById('tutorialRing');
+            const back  = document.getElementById('tutorialBackdrop');
+            const eye   = document.getElementById('tutorialEyebrow');
+            const title = document.getElementById('tutorialTitle');
+            const body  = document.getElementById('tutorialBody');
+            const prog  = document.getElementById('tutorialProgress');
+            const prevBtn = document.getElementById('tutorialPrevBtn');
+            const nextBtn = document.getElementById('tutorialNextBtn');
+            if (!step || !card || !ring) return;
+
+            // Progress dots
+            prog.innerHTML = '';
+            TUTORIAL_STEPS.forEach((_, i) => {
+                const dot = document.createElement('span');
+                dot.className = 'dot' + (i === tutorialIndex ? ' active' : (i < tutorialIndex ? ' done' : ''));
+                prog.appendChild(dot);
+            });
+
+            // Update text
+            eye.textContent   = `STEP ${tutorialIndex + 1} OF ${TUTORIAL_STEPS.length}`;
+            title.textContent = step.title;
+            body.textContent  = step.body;
+            prevBtn.style.visibility = tutorialIndex === 0 ? 'hidden' : 'visible';
+            nextBtn.textContent = step.isFinal ? 'Engage ▶' : 'Next ▶';
+
+            // Resolve target element
+            let target = null;
+            try { target = document.querySelector(step.selector); } catch (_) {}
+            // Skip the previous spotlight target's z-index lift
+            if (tutorialPrevTarget) {
+                tutorialPrevTarget.classList.remove('tutorial-spot-target');
+                tutorialPrevTarget = null;
+            }
+
+            if (!target || step.placement === 'center' || target === document.body) {
+                // Center mode: hide ring, center the card
+                ring.style.opacity = '0';
+                back.style.clipPath = 'none';
+                placeCardCentered(card);
+                return;
+            }
+
+            // Scroll target into view smoothly so the spotlight is visible.
+            try {
+                target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+            } catch (_) { target.scrollIntoView(); }
+
+            // Defer measurement until after smooth-scroll ideally settles
+            // (scroll is async). 280ms is enough for short scrolls; a final
+            // measurement on resize covers the rest.
+            setTimeout(() => {
+                const r = target.getBoundingClientRect();
+                const pad = 10;
+                const x = Math.max(0, r.left   - pad);
+                const y = Math.max(0, r.top    - pad);
+                const w = Math.min(window.innerWidth,  r.width  + pad * 2);
+                const h = Math.min(window.innerHeight, r.height + pad * 2);
+
+                ring.style.opacity = '1';
+                ring.style.left   = x + 'px';
+                ring.style.top    = y + 'px';
+                ring.style.width  = w + 'px';
+                ring.style.height = h + 'px';
+
+                // Lift target above backdrop so it stays clearly visible
+                target.classList.add('tutorial-spot-target');
+                tutorialPrevTarget = target;
+
+                // Position the card relative to the spotlight
+                placeCardNear(card, { x, y, w, h }, step.placement);
+            }, 280);
+        }
+
+        function placeCardCentered(card) {
+            const cardW = Math.min(380, window.innerWidth - 40);
+            const cardH = card.offsetHeight || 220;
+            card.style.left = ((window.innerWidth  - cardW) / 2) + 'px';
+            card.style.top  = ((window.innerHeight - cardH) / 2) + 'px';
+        }
+
+        function placeCardNear(card, spot, placement) {
+            const margin = 16;
+            const cardW = card.offsetWidth  || 380;
+            const cardH = card.offsetHeight || 220;
+            let x, y;
+            switch (placement) {
+                case 'right':
+                    x = spot.x + spot.w + margin;
+                    y = spot.y;
+                    if (x + cardW > window.innerWidth - 12) {
+                        // Fall back to bottom if no room on the right
+                        x = Math.max(12, spot.x);
+                        y = spot.y + spot.h + margin;
+                    }
+                    break;
+                case 'left':
+                    x = spot.x - cardW - margin;
+                    y = spot.y;
+                    if (x < 12) {
+                        x = Math.max(12, spot.x + spot.w - cardW);
+                        y = spot.y - cardH - margin;
+                        if (y < 12) y = spot.y + spot.h + margin;
+                    }
+                    break;
+                case 'top':
+                    x = spot.x;
+                    y = spot.y - cardH - margin;
+                    if (y < 12) y = spot.y + spot.h + margin;
+                    break;
+                case 'bottom':
+                default:
+                    x = spot.x;
+                    y = spot.y + spot.h + margin;
+                    if (y + cardH > window.innerHeight - 12) {
+                        y = Math.max(12, spot.y - cardH - margin);
+                    }
+                    break;
+            }
+            // Clamp to viewport
+            x = Math.max(12, Math.min(window.innerWidth  - cardW - 12, x));
+            y = Math.max(12, Math.min(window.innerHeight - cardH - 12, y));
+            card.style.left = x + 'px';
+            card.style.top  = y + 'px';
+        }
+
         // =====================================================
         // LCARS Audio System
         // =====================================================

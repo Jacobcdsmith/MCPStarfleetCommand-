@@ -132,6 +132,35 @@ PORT=5000 node server.js
 - Open/closed state, position, and maximize state persist in `localStorage`
 - Shortcuts: Ctrl+\` toggle, Esc collapse (in addition to existing Ctrl+R/K/H/T)
 
+## Smoothness Pass
+- `html { scroll-behavior: smooth }`, body font-smoothing
+- `.lcars-panel`, `.lcars-button`, `.nav-link` all use `cubic-bezier(0.2,0.8,0.2,1)`
+  transitions with `will-change: transform` and snappier `:active` press states
+- Staggered `.lcars-enter` fade-up animation on every panel via `--enter-delay`
+  CSS var; above-the-fold panels cascade immediately, the rest fade in via
+  IntersectionObserver as the user scrolls. Single-fire guard prevents
+  duplicate runs across `starfleet:ready` + DOMContentLoaded fallback.
+- Pointer ripple feedback on `.lcars-button`, `.nav-link`, `.lcars-control-btn`
+  (all three have `position: relative; overflow: hidden` so the ripple is
+  clipped to the button shape)
+- All smoothness effects honor `prefers-reduced-motion`
+
+## Guided Tour (Tutorial)
+- "🎓 Tour" button in the nav bar (`#tourTrigger`) replays the tour anytime
+- Auto-launches once on first visit after the boot intro completes
+  (intro `dismiss()` dispatches a `starfleet:ready` CustomEvent)
+- 7-step `TUTORIAL_STEPS` array: header, nav, tool panels, console pill,
+  stardate, tour button, finale
+- Animated spotlight ring + LCARS-themed tooltip card with progress dots
+- Card placement (top/right/bottom/left/center) auto-clamped to viewport
+  with mobile fallback (`@media max-width: 720px` forces full-width card)
+- Spotlight target gets `position: relative; z-index: 99991` lift over the
+  tutorial backdrop (z-index 99990) — both well above floating console (9001)
+- Keyboard: → / Enter advances, ← goes back, Esc skips
+- Smooth-scrolls each target into view (280ms settle delay before measuring)
+- Completion stored in `localStorage` (`lcars.tutorial.completed`)
+- Honors `prefers-reduced-motion`
+
 ## Dependencies
 - `@modelcontextprotocol/sdk` — MCP protocol implementation
 - `express` — HTTP server
