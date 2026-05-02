@@ -219,6 +219,63 @@ function clearForm(formId) {
 }
 
 // =====================================================
+// Smoothness Pass: panel entrance + ripple feedback
+// =====================================================
+let _entranceAnimationsApplied = false;
+function applyEntranceAnimations() {
+    if (_entranceAnimationsApplied) return;
+    _entranceAnimationsApplied = true;
+    const reduce = window.matchMedia &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) return;
+
+    const panels = document.querySelectorAll('.lcars-panel');
+    const io = ('IntersectionObserver' in window)
+        ? new IntersectionObserver((entries, obs) => {
+            entries.forEach((entry, i) => {
+                if (!entry.isIntersecting) return;
+                const el = entry.target;
+                el.style.setProperty('--enter-delay',
+                    (Math.min(i * 60, 240)) + 'ms');
+                el.classList.add('lcars-enter');
+                obs.unobserve(el);
+            });
+        }, { rootMargin: '60px' })
+        : null;
+
+    // Above-the-fold cascade for the first batch
+    const initialBatch = Array.from(panels).slice(0, 6);
+    initialBatch.forEach((p, i) => {
+        p.style.setProperty('--enter-delay', (i * 70) + 'ms');
+        p.classList.add('lcars-enter');
+    });
+    Array.from(panels).slice(6).forEach(p => {
+        if (io) io.observe(p);
+        else { p.style.setProperty('--enter-delay', '0ms'); p.classList.add('lcars-enter'); }
+    });
+}
+
+function attachRippleFeedback() {
+    const reduce = window.matchMedia &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) return;
+    document.addEventListener('pointerdown', (e) => {
+        const target = e.target.closest('.lcars-btn, .back-btn, .tool-card');
+        if (!target) return;
+        const rect = target.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height) * 0.6;
+        const ripple = document.createElement('span');
+        ripple.className = 'ripple';
+        ripple.style.width  = size + 'px';
+        ripple.style.height = size + 'px';
+        ripple.style.left   = (e.clientX - rect.left - size / 2) + 'px';
+        ripple.style.top    = (e.clientY - rect.top  - size / 2) + 'px';
+        target.appendChild(ripple);
+        setTimeout(() => ripple.remove(), 600);
+    }, { passive: true });
+}
+
+// =====================================================
 // Initialization
 // =====================================================
 document.addEventListener('DOMContentLoaded', () => {
@@ -237,6 +294,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.lcars-btn, .tool-card, .back-btn').forEach(el => {
         el.addEventListener('mouseenter', () => playBeep(600, 0.05));
     });
+
+    // Smoothness pass — staggered panel entrance + ripple feedback
+    applyEntranceAnimations();
+    attachRippleFeedback();
 });
 
 // =====================================================

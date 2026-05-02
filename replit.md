@@ -134,16 +134,27 @@ PORT=5000 node server.js
 - Shortcuts: Ctrl+\` toggle, Esc collapse (in addition to existing Ctrl+R/K/H/T)
 
 ## Smoothness Pass
-- `html { scroll-behavior: smooth }`, body font-smoothing
-- `.lcars-panel`, `.lcars-button`, `.nav-link` all use `cubic-bezier(0.2,0.8,0.2,1)`
+- Applied uniformly to **dashboard**, all **`pages/*.html` sub-pages**, and
+  **`mcp-console.html`** for one consistent feel across the whole app.
+- `html { scroll-behavior: smooth }`, body font-smoothing (antialiased +
+  optimizeLegibility)
+- `.lcars-panel`, `.lcars-button` / `.lcars-btn`, `.nav-link`, `.tool-card`,
+  and the MCP console panels/buttons all use `cubic-bezier(0.2,0.8,0.2,1)`
   transitions with `will-change: transform` and snappier `:active` press states
 - Staggered `.lcars-enter` fade-up animation on every panel via `--enter-delay`
   CSS var; above-the-fold panels cascade immediately, the rest fade in via
   IntersectionObserver as the user scrolls. Single-fire guard prevents
   duplicate runs across `starfleet:ready` + DOMContentLoaded fallback.
-- Pointer ripple feedback on `.lcars-button`, `.nav-link`, `.lcars-control-btn`
-  (all three have `position: relative; overflow: hidden` so the ripple is
-  clipped to the button shape)
+- Pointer ripple feedback on `.lcars-button`, `.lcars-btn`, `.nav-link`,
+  `.lcars-control-btn`, `.back-btn`, `.tool-card`, and the MCP console
+  buttons (`.add-server-btn`, `.server-btn`, `.modal-btn`, `.execute-btn`).
+  All have `position: relative; overflow: hidden` so the ripple is clipped
+  to the button shape.
+- For sub-pages, the polish lives in `pages/shared/lcars-styles.css` +
+  `pages/shared/lcars-core.js` so every page picks it up via the existing
+  `<link>` / `<script>` includes — no per-page edits required.
+- `mcp-console.html` is self-contained (own `<style>` + `<script>`), so the
+  same polish is mirrored inline with `mcp-` prefixed keyframes/handlers.
 - All smoothness effects honor `prefers-reduced-motion`
 
 ## Guided Tour (Tutorial)

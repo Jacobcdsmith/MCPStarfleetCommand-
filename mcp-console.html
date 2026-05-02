@@ -43,6 +43,10 @@
             box-sizing: border-box;
         }
 
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
             font-family: 'Rajdhani', sans-serif;
             background: radial-gradient(ellipse at center, #001122 0%, #000000 100%);
@@ -50,6 +54,9 @@
             min-height: 100vh;
             color: var(--text-primary);
             overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
         }
 
         /* Starfield Background */
@@ -733,6 +740,113 @@
             .console-title {
                 font-size: 2rem;
             }
+        }
+
+        /* =====================================================
+           Smoothness Pass: cubic-bezier transitions, panel
+           entrance, ripple feedback, reduced-motion support.
+           ===================================================== */
+        .servers-panel,
+        .toolbox-panel,
+        .inspector-panel,
+        .feeds-panel {
+            transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        box-shadow 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        border-color 0.3s ease;
+            will-change: transform;
+        }
+
+        .servers-panel:hover,
+        .toolbox-panel:hover,
+        .inspector-panel:hover,
+        .feeds-panel:hover {
+            transform: translateY(-3px);
+            box-shadow:
+                0 14px 28px rgba(0,0,0,0.35),
+                0 0 36px rgba(255,153,0,0.35);
+        }
+
+        .servers-panel.lcars-enter,
+        .toolbox-panel.lcars-enter,
+        .inspector-panel.lcars-enter,
+        .feeds-panel.lcars-enter {
+            opacity: 0;
+            transform: translateY(18px);
+            animation: mcpPanelEnter 0.6s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+            animation-delay: var(--enter-delay, 0ms);
+        }
+        @keyframes mcpPanelEnter {
+            from { opacity: 0; transform: translateY(18px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .add-server-btn,
+        .server-btn,
+        .modal-btn,
+        .execute-btn {
+            transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        box-shadow 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        background 0.28s ease,
+                        border-color 0.28s ease,
+                        color 0.28s ease !important;
+            position: relative;
+            overflow: hidden;
+            will-change: transform;
+        }
+
+        .add-server-btn:active,
+        .server-btn:active,
+        .modal-btn:active,
+        .execute-btn:active {
+            transform: scale(0.97);
+            transition-duration: 0.08s !important;
+        }
+
+        .server-card {
+            transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        box-shadow 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        border-color 0.3s ease !important;
+            will-change: transform;
+        }
+        .server-card:hover {
+            transform: translateY(-3px);
+        }
+
+        /* Ripple feedback added via JS pointerdown */
+        .add-server-btn .ripple,
+        .server-btn .ripple,
+        .modal-btn .ripple,
+        .execute-btn .ripple {
+            position: absolute;
+            border-radius: 50%;
+            transform: scale(0);
+            background: rgba(255,255,255,0.35);
+            pointer-events: none;
+            animation: mcpRippleFx 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+        @keyframes mcpRippleFx {
+            to { transform: scale(2.4); opacity: 0; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .servers-panel,
+            .toolbox-panel,
+            .inspector-panel,
+            .feeds-panel,
+            .servers-panel.lcars-enter,
+            .toolbox-panel.lcars-enter,
+            .inspector-panel.lcars-enter,
+            .feeds-panel.lcars-enter,
+            .add-server-btn,
+            .server-btn,
+            .modal-btn,
+            .execute-btn,
+            .server-card {
+                animation-duration: 0.01ms !important;
+                animation-delay: 0ms !important;
+                transition-duration: 0.01ms !important;
+            }
+            html { scroll-behavior: auto; }
         }
     </style>
 </head>
@@ -1566,8 +1680,46 @@
             }
         });
 
+        // Smoothness pass — staggered panel entrance + ripple feedback
+        function applyMcpEntranceAnimations() {
+            const reduce = window.matchMedia &&
+                window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (reduce) return;
+            const panels = document.querySelectorAll(
+                '.servers-panel, .toolbox-panel, .inspector-panel, .feeds-panel'
+            );
+            panels.forEach((p, i) => {
+                p.style.setProperty('--enter-delay', (i * 90) + 'ms');
+                p.classList.add('lcars-enter');
+            });
+        }
+
+        function attachMcpRippleFeedback() {
+            const reduce = window.matchMedia &&
+                window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (reduce) return;
+            document.addEventListener('pointerdown', (e) => {
+                const target = e.target.closest(
+                    '.add-server-btn, .server-btn, .modal-btn, .execute-btn'
+                );
+                if (!target) return;
+                const rect = target.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height) * 0.6;
+                const ripple = document.createElement('span');
+                ripple.className = 'ripple';
+                ripple.style.width  = size + 'px';
+                ripple.style.height = size + 'px';
+                ripple.style.left   = (e.clientX - rect.left - size / 2) + 'px';
+                ripple.style.top    = (e.clientY - rect.top  - size / 2) + 'px';
+                target.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 600);
+            }, { passive: true });
+        }
+
         // Initialize on load
         document.addEventListener('DOMContentLoaded', () => {
+            applyMcpEntranceAnimations();
+            attachMcpRippleFeedback();
             initializeServers();
             
             // Load saved policy settings
