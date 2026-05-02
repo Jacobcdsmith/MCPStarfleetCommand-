@@ -230,8 +230,12 @@ body::before {
     border-color: var(--enterprise-gold);
 }
 
-/* Staggered entrance: each panel fades up with a delay set per-element */
-.lcars-panel.lcars-enter {
+/* Staggered entrance: each panel fades up with a delay set per-element.
+   Also covers .rt-panel (Red Team) and .hub-card (module hub) so the
+   smoothness pass applies uniformly across every sub-page. */
+.lcars-panel.lcars-enter,
+.rt-panel.lcars-enter,
+.hub-card.lcars-enter {
     opacity: 0;
     transform: translateY(18px);
     animation: lcarsPanelEnter 0.6s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
@@ -240,6 +244,17 @@ body::before {
 @keyframes lcarsPanelEnter {
     from { opacity: 0; transform: translateY(18px); }
     to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Smoothness parity for non-.lcars-panel page sections.
+   Match the transition timing/easing without redefining their visual
+   identity (gradients, borders, ::before strips remain page-owned). */
+.rt-panel,
+.hub-card {
+    transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
+                box-shadow 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
+                border-color 0.3s ease !important;
+    will-change: transform;
 }
 
 .lcars-panel::before {
@@ -443,13 +458,25 @@ body::before {
 /* Respect users who prefer reduced motion */
 @media (prefers-reduced-motion: reduce) {
     .lcars-panel.lcars-enter,
+    .rt-panel.lcars-enter,
+    .hub-card.lcars-enter,
     .lcars-panel,
+    .rt-panel,
+    .hub-card,
     .lcars-btn,
     .tool-card,
     .back-btn {
+        animation: none !important;
         animation-duration: 0.01ms !important;
         animation-delay: 0ms !important;
+        transition: none !important;
         transition-duration: 0.01ms !important;
+    }
+    .lcars-panel:hover,
+    .rt-panel:hover,
+    .hub-card:hover,
+    .tool-card:hover {
+        transform: none !important;
     }
     html { scroll-behavior: auto; }
 }

@@ -229,30 +229,46 @@ function applyEntranceAnimations() {
         window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduce) return;
 
-    const panels = document.querySelectorAll('.lcars-panel');
-    const io = ('IntersectionObserver' in window)
-        ? new IntersectionObserver((entries, obs) => {
-            entries.forEach((entry, i) => {
-                if (!entry.isIntersecting) return;
-                const el = entry.target;
-                el.style.setProperty('--enter-delay',
-                    (Math.min(i * 60, 240)) + 'ms');
-                el.classList.add('lcars-enter');
-                obs.unobserve(el);
-            });
-        }, { rootMargin: '60px' })
-        : null;
+    const panels = Array.from(document.querySelectorAll(
+        '.lcars-panel, .rt-panel, .hub-card'
+    ));
+    if (!panels.length) return;
 
-    // Above-the-fold cascade for the first batch
-    const initialBatch = Array.from(panels).slice(0, 6);
-    initialBatch.forEach((p, i) => {
+    // Fold-aware classification: above-the-fold panels cascade
+    // immediately; below-the-fold panels reveal on scroll.
+    const viewportH = window.innerHeight || document.documentElement.clientHeight;
+    const aboveFold = [];
+    const belowFold = [];
+    panels.forEach((p) => {
+        const rect = p.getBoundingClientRect();
+        if (rect.top < viewportH * 0.9) aboveFold.push(p);
+        else belowFold.push(p);
+    });
+
+    aboveFold.forEach((p, i) => {
         p.style.setProperty('--enter-delay', (i * 70) + 'ms');
         p.classList.add('lcars-enter');
     });
-    Array.from(panels).slice(6).forEach(p => {
-        if (io) io.observe(p);
-        else { p.style.setProperty('--enter-delay', '0ms'); p.classList.add('lcars-enter'); }
-    });
+
+    if (!('IntersectionObserver' in window) || !belowFold.length) {
+        belowFold.forEach((p, i) => {
+            p.style.setProperty('--enter-delay', (i * 70) + 'ms');
+            p.classList.add('lcars-enter');
+        });
+        return;
+    }
+    let revealCount = 0;
+    const io = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            const el = entry.target;
+            el.style.setProperty('--enter-delay', (revealCount * 70) + 'ms');
+            revealCount++;
+            el.classList.add('lcars-enter');
+            io.unobserve(el);
+        });
+    }, { threshold: 0.15, rootMargin: '0px 0px -10% 0px' });
+    belowFold.forEach((p) => io.observe(p));
 }
 
 function attachRippleFeedback() {
