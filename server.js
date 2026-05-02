@@ -38,7 +38,10 @@ console.error(`[INFO] pages path: ${path.join(__dirname, 'pages')}`);
 // Serve pages folder - when requesting /pages/git.html, serve pages/git.html
 app.use('/pages', express.static(path.join(__dirname, 'pages')));
 // Serve root static files (dashboard.html, etc.)
-app.use(express.static(__dirname));
+// `index: false` disables the auto-index lookup so that requests like
+// `/promo/` fall through to our explicit route handler (which templates
+// the OG meta tags) instead of being auto-served by the static middleware.
+app.use(express.static(__dirname, { index: false }));
 
 // Utility functions
 const logger = {
@@ -808,7 +811,47 @@ const executeTool = async (name, args = {}) => {
 };
 
 // HTTP Routes
+// Landing page: animated promo/showcase. The dashboard is one click away
+// at /dashboard or /bridge. Visitors who already know the URL can pass
+// ?app=1 to skip the landing page entirely.
+//
+// We hand-render promo/index.html so we can substitute __SITE_URL__ in the
+// Open Graph / Twitter Card meta tags with the request's actual origin.
+// Many social crawlers (Facebook, LinkedIn, Slack) require absolute URLs
+// for og:image to render link previews correctly.
+let _promoTemplate = null;
+const getPromoTemplate = async () => {
+  if (_promoTemplate) return _promoTemplate;
+  _promoTemplate = await fs.readFile(path.join(__dirname, 'promo', 'index.html'), 'utf8');
+  return _promoTemplate;
+};
+const renderPromo = async (req, res) => {
+  try {
+    const tpl = await getPromoTemplate();
+    const proto = (req.headers['x-forwarded-proto'] || req.protocol || 'http').split(',')[0].trim();
+    const host  = (req.headers['x-forwarded-host']  || req.headers.host  || `localhost:${PORT}`).split(',')[0].trim();
+    const siteUrl = `${proto}://${host}`;
+    res.type('html').send(tpl.split('__SITE_URL__').join(siteUrl));
+  } catch (err) {
+    logger.error('renderPromo failed', err);
+    res.status(500).send('Promo page unavailable');
+  }
+};
+
 app.get('/', (req, res) => {
+  if (req.query.app === '1') {
+    return res.sendFile(path.join(__dirname, 'dashboard.html'));
+  }
+  return renderPromo(req, res);
+});
+
+// Match the trailing-slash form of the directory route too, so
+// /promo/ also gets the templated render. The plain /promo/index.html
+// (without trailing slash on the dir) is still served by express.static
+// as a raw file — that's fine; meta tags simply won't be templated there.
+app.get(['/promo', '/promo/'], renderPromo);
+
+app.get(['/dashboard', '/bridge'], (req, res) => {
   res.sendFile(path.join(__dirname, 'dashboard.html'));
 });
 

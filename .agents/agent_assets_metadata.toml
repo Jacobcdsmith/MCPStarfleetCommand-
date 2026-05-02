@@ -5,7 +5,7 @@ generated = []
 id = "q0tmuUv_Fg-zy5y10h9Ix"
 uri = "file://promo/screenshots/15-promo-page.jpg"
 type = "image"
-title = "Promotional showcase page (hero)"
+title = "Landing page (now served at /)"
 
 [[outputs]]
 id = "djIdjdXEXKUFajrKeEyPP"
@@ -48,3 +48,15 @@ id = "XRUL4em3mKxjyklfDmIxC"
 uri = "file://promo/screenshots/14-floating-console.jpg"
 type = "image"
 title = "14 — Floating output console"
+
+[[outputs]]
+id = "k8WvkBckcOU4MzYYUWRYv"
+uri = "file://promo/promo-trailer.mp4"
+type = "video"
+title = "45-second product trailer (1920×1080)"
+
+[[outputs]]
+id = "LJZfy_5dvARMVV2zS5nwh"
+uri = "file://promo/og-card.jpg"
+type = "image"
+title = "Open Graph social card (1200×630)"

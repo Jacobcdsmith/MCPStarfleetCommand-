@@ -6,9 +6,22 @@
 <title>Starfleet Command — Enhanced MCP Server</title>
 <meta name="description" content="LCARS-themed Model Context Protocol server with 40 tools, security testing, digital forensics, real-time analytics, and a cinematic command interface." />
 
+<link rel="canonical" href="__SITE_URL__/" />
 <meta property="og:title" content="Starfleet Command — Enhanced MCP Server" />
 <meta property="og:description" content="40 MCP tools. Real-time analytics. Security testing. Digital forensics. Wrapped in a cinematic LCARS interface." />
 <meta property="og:type" content="website" />
+<meta property="og:url" content="__SITE_URL__/" />
+<meta property="og:image" content="__SITE_URL__/promo/og-card.jpg" />
+<meta property="og:image:secure_url" content="__SITE_URL__/promo/og-card.jpg" />
+<meta property="og:image:type" content="image/jpeg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Starfleet Command — Enhanced MCP Server. 40 tools, 8 modules, LCARS interface." />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Starfleet Command — Enhanced MCP Server" />
+<meta name="twitter:description" content="40 MCP tools. Real-time analytics. Security testing. Digital forensics. Wrapped in a cinematic LCARS interface." />
+<meta name="twitter:image" content="__SITE_URL__/promo/og-card.jpg" />
+<meta name="twitter:image:alt" content="Starfleet Command — Enhanced MCP Server. 40 tools, 8 modules, LCARS interface." />
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -313,6 +326,57 @@ section {
     padding: 100px 24px;
     max-width: 1240px;
     margin: 0 auto;
+}
+
+/* Trailer video */
+#trailer { padding-top: 60px; padding-bottom: 60px; }
+.trailer-frame {
+    position: relative;
+    border-radius: 32px 0 32px 0;
+    overflow: hidden;
+    border: 2px solid var(--lcars-orange);
+    background: #000;
+    box-shadow: 0 30px 80px rgba(255,153,0,0.18),
+                0 0 0 1px rgba(255,153,0,0.25) inset;
+}
+.trailer-frame::before {
+    content: '';
+    position: absolute; inset: 0;
+    pointer-events: none;
+    background:
+        linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 12%, transparent 88%, rgba(0,0,0,0.6) 100%);
+    z-index: 2;
+}
+.trailer-frame video {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+}
+.trailer-meta {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 20px;
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    letter-spacing: 0.4em;
+    color: var(--lcars-muted);
+    text-transform: uppercase;
+}
+.trailer-meta .pip {
+    display: inline-flex; align-items: center; gap: 8px;
+}
+.trailer-meta .pip::before {
+    content: '';
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--lcars-cyan);
+    box-shadow: 0 0 10px var(--lcars-cyan);
+    animation: blip 2s ease-in-out infinite;
+}
+@keyframes blip {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.35; }
 }
 
 .section-eyebrow {
@@ -689,13 +753,43 @@ body.static-mode .scroll-cue { opacity: 1 !important; transform: none !important
     </div>
 
     <div class="cta-row">
-        <a class="cta-btn primary" href="/?skipintro=1"><span class="ico">▸</span>Open Bridge</a>
-        <a class="cta-btn"         href="/?skipintro=1&tour=1"><span class="ico">🎓</span>Take the Tour</a>
+        <a class="cta-btn primary" href="/dashboard?skipintro=1"><span class="ico">▸</span>Open Bridge</a>
+        <a class="cta-btn"         href="/dashboard?skipintro=1&tour=1"><span class="ico">🎓</span>Take the Tour</a>
         <a class="cta-btn"         href="/pages/redteam.html"><span class="ico">⚔</span>Red Team Range</a>
     </div>
 
     <div class="scroll-cue">SCROLL TO ENGAGE<span class="arrow"></span></div>
 </header>
+
+<!-- ============ TRAILER ============ -->
+<section id="trailer">
+    <div class="reveal">
+        <div class="section-eyebrow">PRELUDE · 45 SECONDS</div>
+        <h2 class="section-title">The <span class="accent">trailer.</span></h2>
+        <p class="section-lede">Fifteen scenes. The whole bridge in less than a minute.</p>
+    </div>
+    <div class="trailer-frame reveal">
+        <video
+            src="/promo/promo-trailer.mp4"
+            poster="/promo/screenshots/01-intro-cinematic.jpg"
+            controls
+            playsinline
+            muted
+            loop
+            preload="metadata"
+            aria-label="Starfleet Command product trailer — 45 seconds, no audio">
+            <p>
+                Your browser does not support embedded video.
+                You can <a href="/promo/promo-trailer.mp4" download>download the trailer (MP4, ~5MB)</a>
+                or <a href="/dashboard?skipintro=1">jump straight to the bridge</a>.
+            </p>
+        </video>
+    </div>
+    <div class="trailer-meta reveal">
+        <span class="pip">Now Playing · Stardate 2026.122</span>
+        <span>Captured Live · 1920×1080 · 30 fps</span>
+    </div>
+</section>
 
 <!-- ============ SHOWCASE ============ -->
 <section id="showcase">
@@ -709,13 +803,13 @@ body.static-mode .scroll-cue { opacity: 1 !important; transform: none !important
     </div>
 
     <div class="showcase-hero reveal" id="showcaseHero">
-        <img class="active" src="screenshots/01-intro-cinematic.jpg" alt="Cinematic boot intro" data-label="Cinematic Boot Intro" />
-        <img src="screenshots/03-dashboard-main.jpg"   alt="Main dashboard"         data-label="Main Dashboard" />
-        <img src="screenshots/04-guided-tour.jpg"      alt="Guided tour"            data-label="Guided Tour" />
-        <img src="screenshots/14-floating-console.jpg" alt="Floating output console" data-label="Floating Output Console" />
-        <img src="screenshots/02-modules-hub.jpg"      alt="Modules hub"            data-label="Module Hub" />
-        <img src="screenshots/08-analytics-module.jpg" alt="Real-time analytics"    data-label="Real-Time Analytics" />
-        <img src="screenshots/05-redteam.jpg"          alt="Red Team Testing"       data-label="Red Team Range" />
+        <img class="active" src="/promo/screenshots/01-intro-cinematic.jpg" alt="Cinematic boot intro" data-label="Cinematic Boot Intro" />
+        <img src="/promo/screenshots/03-dashboard-main.jpg"   alt="Main dashboard"         data-label="Main Dashboard" />
+        <img src="/promo/screenshots/04-guided-tour.jpg"      alt="Guided tour"            data-label="Guided Tour" />
+        <img src="/promo/screenshots/14-floating-console.jpg" alt="Floating output console" data-label="Floating Output Console" />
+        <img src="/promo/screenshots/02-modules-hub.jpg"      alt="Modules hub"            data-label="Module Hub" />
+        <img src="/promo/screenshots/08-analytics-module.jpg" alt="Real-time analytics"    data-label="Real-Time Analytics" />
+        <img src="/promo/screenshots/05-redteam.jpg"          alt="Red Team Testing"       data-label="Red Team Range" />
         <div class="showcase-caption">
             <div class="label" id="showcaseLabel">Cinematic Boot Intro</div>
             <div class="num"   id="showcaseNum">01 / 07</div>
@@ -723,13 +817,13 @@ body.static-mode .scroll-cue { opacity: 1 !important; transform: none !important
     </div>
 
     <div class="gallery-grid reveal" role="tablist" aria-label="Showcase image selector">
-        <button type="button" class="thumb active" data-idx="0" role="tab" aria-current="true"  aria-label="Show cinematic boot intro"><span class="tag">Boot</span><img src="screenshots/01-intro-cinematic.jpg" alt="" /></button>
-        <button type="button" class="thumb"        data-idx="1" role="tab" aria-current="false" aria-label="Show main dashboard"><span class="tag">Dashboard</span><img src="screenshots/03-dashboard-main.jpg" alt="" /></button>
-        <button type="button" class="thumb"        data-idx="2" role="tab" aria-current="false" aria-label="Show guided tour"><span class="tag">Tutorial</span><img src="screenshots/04-guided-tour.jpg" alt="" /></button>
-        <button type="button" class="thumb"        data-idx="3" role="tab" aria-current="false" aria-label="Show floating output console"><span class="tag">Console</span><img src="screenshots/14-floating-console.jpg" alt="" /></button>
-        <button type="button" class="thumb"        data-idx="4" role="tab" aria-current="false" aria-label="Show modules hub"><span class="tag">Hub</span><img src="screenshots/02-modules-hub.jpg" alt="" /></button>
-        <button type="button" class="thumb"        data-idx="5" role="tab" aria-current="false" aria-label="Show real-time analytics"><span class="tag">Analytics</span><img src="screenshots/08-analytics-module.jpg" alt="" /></button>
-        <button type="button" class="thumb"        data-idx="6" role="tab" aria-current="false" aria-label="Show red team range"><span class="tag">Red Team</span><img src="screenshots/05-redteam.jpg" alt="" /></button>
+        <button type="button" class="thumb active" data-idx="0" role="tab" aria-current="true"  aria-label="Show cinematic boot intro"><span class="tag">Boot</span><img src="/promo/screenshots/01-intro-cinematic.jpg" alt="" /></button>
+        <button type="button" class="thumb"        data-idx="1" role="tab" aria-current="false" aria-label="Show main dashboard"><span class="tag">Dashboard</span><img src="/promo/screenshots/03-dashboard-main.jpg" alt="" /></button>
+        <button type="button" class="thumb"        data-idx="2" role="tab" aria-current="false" aria-label="Show guided tour"><span class="tag">Tutorial</span><img src="/promo/screenshots/04-guided-tour.jpg" alt="" /></button>
+        <button type="button" class="thumb"        data-idx="3" role="tab" aria-current="false" aria-label="Show floating output console"><span class="tag">Console</span><img src="/promo/screenshots/14-floating-console.jpg" alt="" /></button>
+        <button type="button" class="thumb"        data-idx="4" role="tab" aria-current="false" aria-label="Show modules hub"><span class="tag">Hub</span><img src="/promo/screenshots/02-modules-hub.jpg" alt="" /></button>
+        <button type="button" class="thumb"        data-idx="5" role="tab" aria-current="false" aria-label="Show real-time analytics"><span class="tag">Analytics</span><img src="/promo/screenshots/08-analytics-module.jpg" alt="" /></button>
+        <button type="button" class="thumb"        data-idx="6" role="tab" aria-current="false" aria-label="Show red team range"><span class="tag">Red Team</span><img src="/promo/screenshots/05-redteam.jpg" alt="" /></button>
     </div>
 </section>
 

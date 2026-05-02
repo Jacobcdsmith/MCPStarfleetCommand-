@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>OG Card · Starfleet Command</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+:root {
+    --lcars-orange:    #ff9900;
+    --lcars-gold:      #ffd700;
+    --lcars-purple:    #cc99cc;
+    --lcars-blue:      #5555ff;
+    --lcars-light-blue:#9999ff;
+    --lcars-cyan:      #66ccff;
+    --lcars-bg:        #04060f;
+    --lcars-text:      #e9efff;
+    --lcars-muted:     #9aa6c7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+    width: 1200px; height: 630px;
+    background: var(--lcars-bg);
+    font-family: 'Rajdhani', sans-serif;
+    color: var(--lcars-text);
+    overflow: hidden;
+}
+.card {
+    width: 1200px; height: 630px;
+    position: relative;
+    background:
+      radial-gradient(ellipse at 20% 100%, rgba(255,153,0,0.18), transparent 55%),
+      radial-gradient(ellipse at 85% 0%, rgba(102,204,255,0.18), transparent 55%),
+      radial-gradient(ellipse at 50% 50%, rgba(85,85,255,0.12), transparent 60%),
+      var(--lcars-bg);
+    overflow: hidden;
+}
+
+/* Starfield */
+.stars { position: absolute; inset: 0; pointer-events: none; }
+.star {
+    position: absolute;
+    width: 2px; height: 2px;
+    background: white;
+    border-radius: 50%;
+    opacity: 0.6;
+    box-shadow: 0 0 4px rgba(255,255,255,0.6);
+}
+
+/* LCARS frame */
+.lcars-top {
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 24px;
+    display: flex; gap: 6px; padding: 0 40px;
+}
+.lcars-top .seg { height: 100%; border-radius: 0 0 14px 14px; }
+.lcars-top .s1 { width: 220px; background: var(--lcars-orange); }
+.lcars-top .s2 { width: 380px; background: var(--lcars-purple); }
+.lcars-top .s3 { flex: 1;       background: var(--lcars-blue); }
+
+.lcars-bottom {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 18px;
+    display: flex; gap: 6px; padding: 0 40px;
+}
+.lcars-bottom .seg { height: 100%; border-radius: 14px 14px 0 0; }
+.lcars-bottom .s1 { width: 320px; background: var(--lcars-orange); }
+.lcars-bottom .s2 { width: 100px; background: var(--lcars-gold); }
+.lcars-bottom .s3 { flex: 1;       background: var(--lcars-purple); }
+.lcars-bottom .s4 { width: 140px; background: var(--lcars-cyan); }
+
+/* Left elbow */
+.elbow {
+    position: absolute;
+    top: 30px; left: 0;
+    width: 220px; height: 200px;
+    background: var(--lcars-orange);
+    border-radius: 0 100px 0 0;
+}
+.elbow::after {
+    content: '';
+    position: absolute;
+    top: 80px; left: 60px;
+    width: 160px; height: 120px;
+    background: var(--lcars-bg);
+    border-radius: 0 60px 0 0;
+}
+
+.elbow-bottom {
+    position: absolute;
+    bottom: 24px; left: 0;
+    width: 320px; height: 80px;
+    background: var(--lcars-orange);
+    border-radius: 0 0 100px 0;
+}
+.elbow-bottom::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 60px;
+    width: 260px; height: 50px;
+    background: var(--lcars-bg);
+    border-radius: 0 0 60px 0;
+}
+
+/* Content */
+.content {
+    position: absolute;
+    top: 50px;
+    left: 240px;
+    right: 60px;
+    bottom: 110px;
+    display: flex; flex-direction: column;
+    justify-content: center;
+}
+
+.eyebrow {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 6px;
+    color: var(--lcars-cyan);
+    margin-bottom: 18px;
+    display: flex; align-items: center; gap: 12px;
+}
+.eyebrow::before {
+    content: '';
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #66cc66;
+    box-shadow: 0 0 12px #66cc66;
+}
+
+.title {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: 96px;
+    line-height: 0.92;
+    letter-spacing: -1px;
+    background: linear-gradient(180deg, var(--lcars-gold) 0%, var(--lcars-orange) 60%, #b35900 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 0 60px rgba(255,153,0,0.25);
+    margin-bottom: 6px;
+}
+.title-2 {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    font-size: 32px;
+    letter-spacing: 8px;
+    color: var(--lcars-light-blue);
+    margin-bottom: 24px;
+}
+
+.tagline {
+    font-size: 26px;
+    font-weight: 500;
+    color: var(--lcars-muted);
+    line-height: 1.35;
+    max-width: 820px;
+}
+
+/* Bottom stats strip */
+.stats {
+    position: absolute;
+    left: 340px; right: 60px; bottom: 50px;
+    display: flex; gap: 56px; align-items: baseline;
+}
+.stat .n {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: 42px;
+    color: var(--lcars-cyan);
+    text-shadow: 0 0 20px rgba(102,204,255,0.4);
+}
+.stat .l {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--lcars-muted);
+    margin-top: 2px;
+    text-transform: uppercase;
+}
+
+/* Right corner badge */
+.badge {
+    position: absolute;
+    top: 60px; right: 60px;
+    text-align: right;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 12px;
+    letter-spacing: 4px;
+    color: var(--lcars-purple);
+    text-transform: uppercase;
+}
+.badge .row { display: flex; align-items: center; gap: 8px; justify-content: flex-end; margin-bottom: 6px; }
+.badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--lcars-orange); box-shadow: 0 0 8px var(--lcars-orange); }
+.badge .row.alt { color: var(--lcars-cyan); }
+.badge .row.alt .dot { background: var(--lcars-cyan); box-shadow: 0 0 8px var(--lcars-cyan); }
+</style>
+</head>
+<body>
+<div class="card">
+    <div class="stars" id="stars"></div>
+
+    <div class="lcars-top">
+        <div class="seg s1"></div>
+        <div class="seg s2"></div>
+        <div class="seg s3"></div>
+    </div>
+
+    <div class="elbow"></div>
+    <div class="elbow-bottom"></div>
+
+    <div class="badge">
+        <div class="row"><span class="dot"></span>Starfleet Command</div>
+        <div class="row alt"><span class="dot"></span>Stardate 2026.122</div>
+    </div>
+
+    <div class="content">
+        <div class="eyebrow">Enhanced MCP Server</div>
+        <div class="title">STARFLEET</div>
+        <div class="title">COMMAND</div>
+        <div class="title-2">LCARS · BRIDGE INTERFACE</div>
+        <div class="tagline">40 Model Context Protocol tools. Real-time analytics, security testing, digital forensics, and a Red Team simulation range — wrapped in a cinematic Star Trek command bridge.</div>
+    </div>
+
+    <div class="stats">
+        <div class="stat"><div class="n">40</div><div class="l">MCP Tools</div></div>
+        <div class="stat"><div class="n">8</div><div class="l">Modules</div></div>
+        <div class="stat"><div class="n">14</div><div class="l">Live Pages</div></div>
+        <div class="stat"><div class="n">7</div><div class="l">Tour Steps</div></div>
+    </div>
+
+    <div class="lcars-bottom">
+        <div class="seg s1"></div>
+        <div class="seg s2"></div>
+        <div class="seg s3"></div>
+        <div class="seg s4"></div>
+    </div>
+</div>
+
+<script>
+(function(){
+    var s = document.getElementById('stars');
+    var seed = 1337;
+    function rand() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+    for (var i = 0; i < 80; i++) {
+        var d = document.createElement('div');
+        d.className = 'star';
+        d.style.left = (rand() * 1200) + 'px';
+        d.style.top  = (rand() * 630) + 'px';
+        var sz = 1 + rand() * 2.5;
+        d.style.width = sz + 'px';
+        d.style.height = sz + 'px';
+        d.style.opacity = (0.3 + rand() * 0.6).toFixed(2);
+        s.appendChild(d);
+    }
+})();
+</script>
+</body>
+</html>

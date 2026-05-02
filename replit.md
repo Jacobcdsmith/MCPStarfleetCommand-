@@ -169,27 +169,50 @@ PORT=5000 node server.js
 - `zod` — Schema validation
 
 ## Promotional Materials
-- `promo/index.html` — Standalone animated LCARS landing/showcase page served
-  at `/promo/` via the existing `express.static(__dirname)` middleware
-  (no server route changes required)
+- **`/` is the landing page** — Visitors land on the animated promo/showcase
+  page; the dashboard is one click away at `/dashboard` (alias `/bridge`).
+  `?app=1` on `/` skips the landing and goes straight to the dashboard.
+- `promo/index.html` — Standalone animated LCARS landing/showcase page,
+  also reachable at `/promo/` directly
+- `promo/promo-trailer.mp4` — 45-second auto-built product trailer (15
+  scenes, 1920×1080 @ 30 fps, ~5MB). Embedded at the top of the promo page
+  in the `#trailer` section with native `<video controls>`, looping, muted
+  by default, and `playsinline` for mobile autoplay-friendly behavior.
+- `promo/build-video.sh` — Re-runnable ffmpeg script that assembles the
+  trailer from the screenshots with crossfade transitions. Run anytime
+  the screenshots are refreshed.
+- `promo/og-card.jpg` — 1200×630 Open Graph social card for link previews.
+  Built from `promo/og.html` (a self-contained 1200×630 LCARS card) via a
+  screenshot + ffmpeg crop. Referenced from `og:image`, `og:image:width`,
+  `og:image:height`, `twitter:card=summary_large_image`, and `twitter:image`
+  meta tags in `promo/index.html`.
+- `promo/og.html` — Source HTML for the OG card. Edit + re-screenshot +
+  ffmpeg-crop to regenerate `og-card.jpg`.
 - `promo/screenshots/01-14*.jpg` — 14 captured app screenshots (intro,
   dashboard, tour, console, modules hub, all 9 sub-modules, redteam)
 - `promo/screenshots/15-promo-page.jpg` — Snapshot of the promo page itself
 - Page features: animated starfield, gradient hero with per-word reveal,
-  animated stat counters, auto-cycling showcase carousel synced to a
-  keyboard-accessible thumbnail tablist, IntersectionObserver reveal-on-scroll,
-  feature grid, 8-category toolbox, animated quote card
+  animated stat counters, embedded trailer video, auto-cycling showcase
+  carousel synced to a keyboard-accessible thumbnail tablist,
+  IntersectionObserver reveal-on-scroll, feature grid, 8-category toolbox,
+  animated quote card
 - Honors `prefers-reduced-motion` in CSS *and* JS (counter and carousel
   autoplay both no-op under reduced motion)
 - `?static=1` URL flag freezes all entrance animations + counters to their
   final state for clean screenshot/print captures (real users never use it)
 - Carousel thumbnails are real `<button>` elements with `role="tab"` /
   `aria-current` and visible focus rings
+- All asset URLs in `promo/index.html` use absolute paths (`/promo/...`)
+  so the page renders identically when served at `/`, `/promo/`, or
+  `/promo/index.html`
 
 ## URL Param Escape Hatches (for screenshots / automation / demos)
-- `/?skipintro=1` — bypass the cinematic boot intro
-- `/?tour=1` — force-replay the guided tour (works with or without `skipintro`)
-- `/?openconsole=1` — open the floating output console
+- `/?app=1` — skip the promo landing page and go straight to the dashboard
+- `/dashboard?skipintro=1` (or `/bridge?skipintro=1`) — bypass the
+  cinematic boot intro
+- `/dashboard?tour=1` — force-replay the guided tour (works with or
+  without `skipintro`)
+- `/dashboard?openconsole=1` — open the floating output console
 - `/promo/?static=1` — freeze all entrance animations on the promo page
 
 ## Notes
