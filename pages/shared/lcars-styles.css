@@ -427,7 +427,8 @@ body::before {
 /* Ripple feedback added by JS via pointerdown */
 .lcars-btn .ripple,
 .back-btn .ripple,
-.tool-card .ripple {
+.tool-card .ripple,
+.hub-card .ripple {
     position: absolute;
     border-radius: 50%;
     transform: scale(0);

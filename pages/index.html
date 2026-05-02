@@ -21,11 +21,14 @@
             border-radius: 25px 0 25px 0;
             padding: 0;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        box-shadow 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        border-color 0.3s ease;
             position: relative;
             overflow: hidden;
             text-decoration: none;
             display: block;
+            will-change: transform;
         }
 
         .hub-card::before {
