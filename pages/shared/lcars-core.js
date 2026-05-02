@@ -264,11 +264,17 @@ function applyEntranceAnimations() {
             const el = entry.target;
             el.style.setProperty('--enter-delay', (revealCount * 70) + 'ms');
             revealCount++;
+            el.classList.remove('lcars-pre-reveal');
             el.classList.add('lcars-enter');
             io.unobserve(el);
         });
     }, { threshold: 0.15, rootMargin: '0px 0px -10% 0px' });
-    belowFold.forEach((p) => io.observe(p));
+    // Pre-hide below-the-fold panels so a fast scroll can't catch them
+    // in their final state before the IntersectionObserver fires.
+    belowFold.forEach((p) => {
+        p.classList.add('lcars-pre-reveal');
+        io.observe(p);
+    });
 }
 
 function attachRippleFeedback() {

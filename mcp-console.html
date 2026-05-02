@@ -783,6 +783,17 @@
                 0 0 36px rgba(255,153,0,0.35);
         }
 
+        /* Pre-reveal hidden state for below-the-fold MCP panels —
+           applied by JS before IntersectionObserver attaches so a fast
+           scroll can't catch them in their final state. */
+        .servers-panel.lcars-pre-reveal,
+        .toolbox-panel.lcars-pre-reveal,
+        .inspector-panel.lcars-pre-reveal,
+        .messages-feed.lcars-pre-reveal {
+            opacity: 0;
+            transform: translateY(18px);
+        }
+
         .servers-panel.lcars-enter,
         .toolbox-panel.lcars-enter,
         .inspector-panel.lcars-enter,
@@ -873,6 +884,20 @@
             .messages-feed:hover,
             .server-card:hover,
             .tool-card:hover {
+                transform: none !important;
+            }
+            /* If reduced-motion is toggled mid-session, force any
+               already-marked entrance/pre-reveal panels back to their
+               final visible state so they don't get stuck hidden. */
+            .servers-panel.lcars-enter,
+            .toolbox-panel.lcars-enter,
+            .inspector-panel.lcars-enter,
+            .messages-feed.lcars-enter,
+            .servers-panel.lcars-pre-reveal,
+            .toolbox-panel.lcars-pre-reveal,
+            .inspector-panel.lcars-pre-reveal,
+            .messages-feed.lcars-pre-reveal {
+                opacity: 1 !important;
                 transform: none !important;
             }
             html { scroll-behavior: auto; }
@@ -1752,11 +1777,17 @@
                     const el = entry.target;
                     el.style.setProperty('--enter-delay', (revealCount * 90) + 'ms');
                     revealCount++;
+                    el.classList.remove('lcars-pre-reveal');
                     el.classList.add('lcars-enter');
                     io.unobserve(el);
                 });
             }, { threshold: 0.15, rootMargin: '0px 0px -10% 0px' });
-            belowFold.forEach((p) => io.observe(p));
+            // Pre-hide below-the-fold panels so fast scroll doesn't
+            // catch them in their final state before the IO fires.
+            belowFold.forEach((p) => {
+                p.classList.add('lcars-pre-reveal');
+                io.observe(p);
+            });
         }
 
         function attachMcpRippleFeedback() {

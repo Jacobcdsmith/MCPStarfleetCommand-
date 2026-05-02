@@ -241,6 +241,15 @@ body::before {
     animation: lcarsPanelEnter 0.6s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
     animation-delay: var(--enter-delay, 0ms);
 }
+/* Pre-reveal hidden state for below-the-fold panels — applied by JS
+   immediately before IntersectionObserver attaches, so a fast scroll
+   can't catch them in their final state before the IO fires. */
+.lcars-panel.lcars-pre-reveal,
+.rt-panel.lcars-pre-reveal,
+.hub-card.lcars-pre-reveal {
+    opacity: 0;
+    transform: translateY(18px);
+}
 @keyframes lcarsPanelEnter {
     from { opacity: 0; transform: translateY(18px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -493,6 +502,9 @@ body::before {
     .lcars-panel.lcars-enter,
     .rt-panel.lcars-enter,
     .hub-card.lcars-enter,
+    .lcars-panel.lcars-pre-reveal,
+    .rt-panel.lcars-pre-reveal,
+    .hub-card.lcars-pre-reveal,
     .lcars-panel,
     .rt-panel,
     .hub-card,
@@ -505,6 +517,18 @@ body::before {
         animation-delay: 0ms !important;
         transition: none !important;
         transition-duration: 0.01ms !important;
+    }
+    /* If the user toggles reduced-motion mid-session, force any
+       already-marked entrance/pre-reveal panels back to their final
+       visible state so they don't get stuck hidden or mid-animation. */
+    .lcars-panel.lcars-enter,
+    .rt-panel.lcars-enter,
+    .hub-card.lcars-enter,
+    .lcars-panel.lcars-pre-reveal,
+    .rt-panel.lcars-pre-reveal,
+    .hub-card.lcars-pre-reveal {
+        opacity: 1 !important;
+        transform: none !important;
     }
     .lcars-panel:hover,
     .rt-panel:hover,
