@@ -447,9 +447,14 @@
     <script>
         // Update mission time in hero
         function updateHeroMissionTime() {
+            const missionTime = generateMissionTime();
             const el = document.getElementById('mission-time');
             if (el) {
-                el.textContent = generateMissionTime();
+                el.textContent = missionTime;
+            }
+            const displayEl = document.getElementById('mission-time-display');
+            if (displayEl) {
+                displayEl.textContent = `MISSION TIME ${missionTime}`;
             }
         }
 

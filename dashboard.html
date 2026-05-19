@@ -4992,7 +4992,7 @@
         // Tool Functions
         // =====================================================
         function testJsonProcessing() {
-            const testJson = '{"platform":"aegis-command-grid","environment":"production","activeModules":8,"highAvailability":true,"systems":["orchestration","security","analytics"]}';
+            const testJson = '{"platform":"aegis-command-grid","registry":"AGC-01","operators":430,"highAvailability":true,"systems":["orchestration","security","analytics"]}';
             executeCommand('format_json', { jsonString: testJson, indent: 2 });
         }
 
